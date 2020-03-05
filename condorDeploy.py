@@ -36,7 +36,7 @@ def main(args=None):
     createCondorFiles(opts, condorDirs, condorIdx)
     
     # Submit condor jobs
-    #submitJobs(opts, condorDirs)
+    submitJobs(opts, condorDirs)
 
 
 if __name__ == '__main__':
