@@ -27,10 +27,14 @@ def main(args=None):
     sys.path.append("moduls")
     from listParser import parseInputList
     from HTCSubmit import submitJobs
+    from condorFileWriter import createCondorFiles
     
     if opts.list:
-        nDirs, condorDirs = parseInputList(opts)
-
+        nDirs, condorDirs, condorIdx = parseInputList(opts)
+    
+    # Create Condor files
+    createCondorFiles(opts, condorDirs, condorIdx)
+    
     # Submit condor jobs
     #submitJobs(opts, condorDirs)
 
