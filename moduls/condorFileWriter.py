@@ -9,13 +9,14 @@ def createCondorFiles(opts, condorDirs, condorIdx):
         outputPath = cDir + "/" + "output.log"
         logPath = cDir + "/" + "output.clog"
         errPath = cDir + "/" + "output.err"
+        bashScriptPath = cDir + str("/script.sh")
 
         # Writing sub file
         subFilePath = cDir + str("/crawler.sub")
         try:
             with open(subFilePath, 'w') as outSub:
                 outSub.write("universe = vanilla\n")
-                outSub.write("executable = script.sh\n")
+                outSub.write('executable = {}\n'.format(bashScriptPath))
                 outSub.write('output = {}\n'.format(outputPath))
                 outSub.write('error = {}\n'.format(errPath))
                 outSub.write('log = {}\n'.format(logPath))
@@ -31,7 +32,6 @@ def createCondorFiles(opts, condorDirs, condorIdx):
 
         
         # Build executable bash script
-        bashScriptPath = cDir + str("/script.sh")
         tmpOutDir = cDir + str("/outFiles")
         dataListPath = cDir + str("/dataList_") + str(condorIdx[idx]) + ".txt"
         try:
