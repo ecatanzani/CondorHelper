@@ -16,6 +16,8 @@ def main(args=None):
                         dest='executable', help='Analysis script')                    
     parser.add_argument("-n", "--number", type=int, dest='fileNumber',
                         const=100, nargs='?', help='number of files per job')
+    parser.add_argument("-i", "--installation", type=str,
+                        dest='installation', help='Load local DAMPE installation')                    
     parser.add_argument("-v", "--verbose", dest='verbose', default=False,
                         action='store_true', help='run in high verbosity mode')
     parser.add_argument("-r", "--recreate", dest='recreate', default=False,
@@ -33,8 +35,11 @@ def main(args=None):
         nDirs, condorDirs, condorIdx = parseInputList(opts)
     
     # Create Condor files
-    createCondorFiles(opts, condorDirs, condorIdx, False)       #Use False to use latest local DAMPE Event package
-    
+    if opts.installation:
+        createCondorFiles(opts, condorDirs, condorIdx, False)
+    else:
+        createCondorFiles(opts, condorDirs, condorIdx)
+
     # Submit condor jobs
     submitJobs(opts, condorDirs)
 
