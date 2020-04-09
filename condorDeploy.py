@@ -33,7 +33,7 @@ def main(args=None):
         nDirs, condorDirs, condorIdx = parseInputList(opts)
     
     # Create Condor files
-    createCondorFiles(opts, condorDirs, condorIdx)
+    createCondorFiles(opts, condorDirs, condorIdx, False)       #Use False to use latest local DAMPE Event package
     
     # Submit condor jobs
     submitJobs(opts, condorDirs)
