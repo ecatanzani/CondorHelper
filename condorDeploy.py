@@ -22,6 +22,8 @@ def main(args=None):
                         action='store_true', help='run in high verbosity mode')
     parser.add_argument("-r", "--recreate", dest='recreate', default=False,
                         action='store_true', help='recreate output dirs if present')
+    parser.add_argument("-t", "--task", type=str,
+                        dest='task', help='Define job task')
 
     opts = parser.parse_args(args)
 

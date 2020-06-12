@@ -1,6 +1,6 @@
 import os
 import subprocess
-
+from tasks import eFlux_task, MC_check_task
 
 def createCondorFiles(opts, condorDirs, condorIdx, completeSoftware=True):
     for idx, cDir in enumerate(condorDirs):
@@ -32,24 +32,13 @@ def createCondorFiles(opts, condorDirs, condorIdx, completeSoftware=True):
 
         
         # Build executable bash script
-        tmpOutDir = cDir + str("/outFiles")
         dataListPath = cDir + str("/dataList_") + str(condorIdx[idx]) + ".txt"
         try:
             with open(bashScriptPath, "w") as outScript:
-                if completeSoftware:
-                    outScript.write("#!/usr/bin/env bash\n")
-                    outScript.write("source /opt/rh/devtoolset-7/enable\n")
-                    outScript.write("source /cvmfs/dampe.cern.ch/centos7/etc/setup.sh\n")
-                    outScript.write("dampe_init\n")
-                    outScript.write('mkdir {}\n'.format(tmpOutDir))
-                    outScript.write('{} -a {} -d {} -v'.format(opts.executable,dataListPath,tmpOutDir))
-                else:
-                    outScript.write("#!/usr/bin/env bash\n")
-                    outScript.write("source /opt/rh/devtoolset-7/enable\n")
-                    outScript.write("source /cvmfs/sft.cern.ch/lcg/app/releases/ROOT/5.34.36/x86_64-centos7-gcc48-opt/root/bin/thisroot.sh\n")
-                    outScript.write('cd /storage/gpfs_data/dampe/users/ecatanzani/Softwares/DAMPE/Event && source thisdmpeventclass.sh && cd {}\n'.format(cDir))
-                    outScript.write('mkdir {}\n'.format(tmpOutDir))
-                    outScript.write('{} -a {} -d {} -v'.format(opts.executable,dataListPath,tmpOutDir))
+                if opts.task == "eFlux":
+                    eFlux_task(opts, completeSoftware, outScript, dataListPath, cDir)
+                if opts.task == "MC_check":
+                    MC_check_task(opts, outScript, dataListPath, cDir)
         except OSError:
             print('ERROR creating HTCondor bash script file in: {}'.format(cDir))
             raise
