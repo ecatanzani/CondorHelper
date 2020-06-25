@@ -2,7 +2,8 @@ import os
 import subprocess
 from tasks import eFlux_task, MC_check_task
 
-def createCondorFiles(opts, condorDirs, condorIdx, completeSoftware=True):
+
+def createCondorFiles(opts, condorDirs, condorIdx):
     for idx, cDir in enumerate(condorDirs):
 
         # Find out paths
@@ -30,13 +31,12 @@ def createCondorFiles(opts, condorDirs, condorIdx, completeSoftware=True):
             if opts.verbose:
                 print('HTCondor sub file created in: {}'.format(cDir))
 
-        
         # Build executable bash script
         dataListPath = cDir + str("/dataList_") + str(condorIdx[idx]) + ".txt"
         try:
             with open(bashScriptPath, "w") as outScript:
                 if opts.task == "eFlux":
-                    eFlux_task(opts, completeSoftware, outScript, dataListPath, cDir)
+                    eFlux_task(opts, outScript, dataListPath, cDir)
                 if opts.task == "MC_check":
                     MC_check_task(opts, outScript, dataListPath, cDir)
         except OSError:
@@ -47,4 +47,5 @@ def createCondorFiles(opts, condorDirs, condorIdx, completeSoftware=True):
                 print('HTCondor bash script file created in: {}'.format(cDir))
 
         # Make bash script executable
-        subprocess.run('chmod +x {}'.format(bashScriptPath), shell=True, check=True)
+        subprocess.run('chmod +x {}'.format(bashScriptPath),
+                       shell=True, check=True)
