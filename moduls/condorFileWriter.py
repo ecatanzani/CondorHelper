@@ -31,7 +31,6 @@ def createCondorFiles(opts, condorDirs, condorIdx):
         else:
             if opts.verbose:
                 print('HTCondor sub file created in: {}'.format(cDir))
-                sys.exit()
 
         # Build executable bash script
         dataListPath = cDir + str("/dataList_") + str(condorIdx[idx]) + ".txt"
@@ -45,6 +44,7 @@ def createCondorFiles(opts, condorDirs, condorIdx):
                     STKcharge_task(opts, outScript, dataListPath, cDir)
                 else:
                     print("ERROR! Please, choose a correct task...")
+                    sys.exit()
 
         except OSError:
             print('ERROR creating HTCondor bash script file in: {}'.format(cDir))
