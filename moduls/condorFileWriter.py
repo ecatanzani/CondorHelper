@@ -35,8 +35,8 @@ def createCondorFiles(opts, condorDirs, condorIdx):
         dataListPath = cDir + str("/dataList_") + str(condorIdx[idx]) + ".txt"
         try:
             with open(bashScriptPath, "w") as outScript:
-                if opts.task == "eFlux":
-                    eFlux_task(opts, outScript, dataListPath, cDir)
+                if opts.task == "dmpExe":
+                    dampe_task(opts, outScript, dataListPath, cDir)
                 if opts.task == "MC_check":
                     MC_check_task(opts, outScript, dataListPath, cDir)
         except OSError:
