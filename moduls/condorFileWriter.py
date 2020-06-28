@@ -1,6 +1,6 @@
 import os
 import subprocess
-from tasks import eFlux_task, MC_check_task
+from tasks import dampe_task, MC_check_task
 
 
 def createCondorFiles(opts, condorDirs, condorIdx):
