@@ -1,5 +1,5 @@
 
-def dampe_task(opts, outScript, dataListPath, cDir):
+def eFlux_acceptance_task(opts, outScript, dataListPath, cDir):
     tmpOutDir = cDir + str("/outFiles")
     outScript.write("#!/usr/bin/env bash\n")
     outScript.write("source /cvmfs/dampe.cern.ch/centos7/etc/setup.sh\n")
@@ -18,3 +18,12 @@ def MC_check_task(opts, outScript, dataListPath, cDir):
     outScript.write('mkdir {}\n'.format(tmpOutDir))
     outScript.write(
         'python {} -l {} -d {} -v'.format(opts.executable, dataListPath, tmpOutDir))
+
+def STKcharge_task(opts, outScript, dataListPath, cDir):
+    tmpOutDir = cDir + str("/outFiles")
+    outScript.write("#!/usr/bin/env bash\n")
+    outScript.write("source /cvmfs/dampe.cern.ch/centos7/etc/setup.sh\n")
+    outScript.write("dampe_init trunk\n")
+    outScript.write('mkdir {}\n'.format(tmpOutDir))
+    outScript.write(
+        '{} -i {} -v'.format(opts.executable, dataListPath))
