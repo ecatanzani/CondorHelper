@@ -1,4 +1,5 @@
 import os
+import sys
 import subprocess
 from tasks import eFlux_acceptance_task, MC_check_task, STKcharge_task
 
@@ -30,6 +31,7 @@ def createCondorFiles(opts, condorDirs, condorIdx):
         else:
             if opts.verbose:
                 print('HTCondor sub file created in: {}'.format(cDir))
+                sys.exit()
 
         # Build executable bash script
         dataListPath = cDir + str("/dataList_") + str(condorIdx[idx]) + ".txt"
@@ -41,6 +43,8 @@ def createCondorFiles(opts, condorDirs, condorIdx):
                     MC_check_task(opts, outScript, dataListPath, cDir)
                 elif opts.task == "STKcharge":
                     STKcharge_task(opts, outScript, dataListPath, cDir)
+                else:
+                    print("ERROR! Please, choose a correct task...")
 
         except OSError:
             print('ERROR creating HTCondor bash script file in: {}'.format(cDir))
