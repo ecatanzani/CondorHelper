@@ -4,7 +4,6 @@ def eFlux_acceptance_task(opts, outScript, dataListPath, cDir):
     outScript.write("#!/usr/bin/env bash\n")
     outScript.write("source /cvmfs/dampe.cern.ch/centos7/etc/setup.sh\n")
     outScript.write("dampe_init trunk\n")
-    outScript.write("source scl_source enable devtoolset-7")
     outScript.write('mkdir {}\n'.format(tmpOutDir))
     outScript.write(
         '{} -a {} -d {} -v'.format(opts.executable, dataListPath, tmpOutDir))
