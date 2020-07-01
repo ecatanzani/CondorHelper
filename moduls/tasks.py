@@ -26,4 +26,4 @@ def STKcharge_task(opts, outScript, dataListPath, cDir):
     outScript.write("dampe_init trunk\n")
     outScript.write('mkdir {}\n'.format(tmpOutDir))
     outScript.write(
-        '{} -i {} -v'.format(opts.executable, dataListPath))
+        '{} -i {} -d {} -v'.format(opts.executable, dataListPath, tmpOutDir))
