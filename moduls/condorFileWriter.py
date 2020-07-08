@@ -1,7 +1,7 @@
 import os
 import sys
 import subprocess
-from tasks import eFlux_acceptance_task, MC_check_task, STKcharge_task
+from tasks import eFlux_acceptance_task, eFlux_task, MC_check_task, STKcharge_task
 
 
 def createCondorFiles(opts, condorDirs, condorIdx):
@@ -38,6 +38,8 @@ def createCondorFiles(opts, condorDirs, condorIdx):
             with open(bashScriptPath, "w") as outScript:
                 if opts.task == "eFlux_acceptance":
                     eFlux_acceptance_task(opts, outScript, dataListPath, cDir)
+                if opts.task == "eFlux":
+                    eFlux_task(opts, outScript, dataListPath, cDir)
                 elif opts.task == "MC_check":
                     MC_check_task(opts, outScript, dataListPath, cDir)
                 elif opts.task == "STKcharge":
