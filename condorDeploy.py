@@ -14,6 +14,8 @@ def main(args=None):
                         dest='directory', help='Target Directory')
     parser.add_argument("-x", "--executable", type=str,
                         dest='executable', help='Analysis script')
+    parser.add_argument("-c", "--config", type=str,
+                        dest='config', help='Software Config Directory')
     parser.add_argument("-n", "--number", type=int, dest='fileNumber',
                         const=100, nargs='?', help='number of files per job')
     parser.add_argument("-v", "--verbose", dest='verbose', default=False,
