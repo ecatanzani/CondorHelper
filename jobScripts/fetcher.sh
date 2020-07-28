@@ -1,14 +1,16 @@
 #!/usr/bin/env bash
 
-function fetchData() { condor_transfer_data -name sn-01.cr.cnaf.infn.it $1; }
-function removeJob() { condor_rm -name sn-01.cr.cnaf.infn.it $1; }
+_NODE_NAME="sn-01.cr.cnaf.infn.it"
 
-FIELDS=`condor_q -submitter ${USER} | grep ID | grep -v OWNER | gawk 'NR==1{print NF}'`
+function fetchData() { condor_transfer_data -name ${_NODE_NAME} $1; }
+function removeJob() { condor_rm -name ${_NODE_NAME} $1; }
+
+FIELDS=`condor_q -name ${_NODE_NAME} ${USER} | grep ID | grep -v OWNER | gawk 'NR==1{print NF}'`
 if [ $FIELDS -eq 10 ]
 then
-	LIST=`condor_q -submitter ${USER} | grep ID | grep -v OWNER | awk '{ if ($9 == "1" && $8 != "1" && $7 != 1) print $3 }'`
+	LIST=`condor_q -name ${_NODE_NAME} ${USER} | grep ID | grep -v OWNER | awk '{ if ($9 == "1" && $8 != "1" && $7 != 1) print $3 }'`
 else
-	LIST=`condor_q -submitter ${USER} | grep ID | grep -v OWNER | awk '{ if ($9 == "1" && $8 != "1" && $7 != 1 && $6 != 1) print $3 }'`
+	LIST=`condor_q -name ${_NODE_NAME} ${USER} | grep ID | grep -v OWNER | awk '{ if ($9 == "1" && $8 != "1" && $7 != 1 && $6 != 1) print $3 }'`
 fi
 
 if [ -z "$LIST" ]
