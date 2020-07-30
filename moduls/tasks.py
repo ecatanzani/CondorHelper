@@ -15,7 +15,7 @@ def eFlux_task(opts, outScript, dataListPath, cDir):
     outScript.write("dampe_init trunk\n")
     outScript.write('mkdir {}\n'.format(tmpOutDir))
     outScript.write(
-        '{} -i {} -d {} -v'.format(opts.executable, dataListPath, tmpOutDir))
+        '{} -i {} -d {} -w {} -v'.format(opts.executable, dataListPath, tmpOutDir, opts.config))
 
 
 def MC_check_task(opts, outScript, dataListPath, cDir):
