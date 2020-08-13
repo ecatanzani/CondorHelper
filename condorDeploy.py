@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import os
 import sys
 from argparse import ArgumentParser
 
@@ -12,6 +13,8 @@ def main(args=None):
                         dest='list', help='Input file list')
     parser.add_argument("-d", "--dir", type=str,
                         dest='directory', help='Target Directory')
+    parser.add_argument("-i", "--iterate", type=str,
+                        dest='iterate', help='Iterate through Target Directory - nTuples analysis')
     parser.add_argument("-x", "--executable", type=str,
                         dest='executable', help='Analysis script')
     parser.add_argument("-c", "--config", type=str,
@@ -35,12 +38,25 @@ def main(args=None):
 
     if opts.list:
         nDirs, condorDirs, condorIdx = parseInputList(opts)
+        # Create Condor files
+        createCondorFiles(opts, condorDirs, condorIdx)
+        # Submit condor jobs
+        submitJobs(opts, condorDirs)
+    if opts.iterate and (not opts.list) and (not opts.directory):
+        nTuples_wdcontent = [ opts.iterate + "/" + tmp_dir for tmp_dir in os.listdir(opts.iterate) ]
+        for dir in nTuples_wdcontent:
+            if "201" in dir:
+                opts.directory = dir
+                opts.list = dir + "/dataFileList.txt"
+                nDirs, condorDirs, condorIdx = parseInputList(opts)
+                # Create Condor files
+                createCondorFiles(opts, condorDirs, condorIdx)
+                # Submit condor jobs
+                submitJobs(opts, condorDirs)
 
-    # Create Condor files
-    createCondorFiles(opts, condorDirs, condorIdx)
+    
 
-    # Submit condor jobs
-    submitJobs(opts, condorDirs)
+    
 
 
 if __name__ == '__main__':
