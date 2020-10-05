@@ -563,6 +563,31 @@ class condor_task():
 				print('Resubmitting job from folder: {}'.format(dir))
 
 			subprocess.run("condor_submit -name sn-01.cr.cnaf.infn.it -spool crawler.sub", shell=True, check=True)
+	
+	def cargo(self, target_dir):
+		_dict = {}
+		for _mdir in self.data_dirs:
+			last_data_idx = _mdir.rindex('/')
+			_name = _mdir[last_data_idx-6:last_data_idx]
+			if _name not in _dict:
+				_dict[_name] = []
+			_dict[_name].append(_mdir)
+
+		for _elm in _dict:
+			_path = target_dir + "/" + _elm
+			os.mkdir(_path)
+			for _data in _dict[_elm]:
+				_data_path = _data + "/outFiles"
+				_idx_e = _data_path.rindex('/')
+				_idx_s = _data_path[:_idx_e].rindex('/')
+				_job = _data_path[_idx_s+1:_idx_e]
+				_files = [_file for _file in os.listdir(_data_path) if _file.endswith('.root')]
+				for _file in _files:
+					_idx = _file.rindex('.')
+					_src = _data_path + "/" + _file
+					_dest = _path + "/" + f"{_file[:_idx]}_{_job}.root"
+					shutil.copy2(_src, _dest)
+		
 
 	def dampe_status(self):
 		parser = ArgumentParser(
@@ -575,6 +600,8 @@ class condor_task():
                         action='store_true', help='HTCondor flag to resubmit failed jobs')
 		parser.add_argument("-e", "--erase", dest='erase', default=False,
                         action='store_true', help='Remove ROOT files with no keys')
+		parser.add_argument("-m", "--move", type=str,
+							dest='move', help='Move ROOT nTuples to target directory')
 		parser.add_argument("-v", "--verbose", dest='verbose', default=False,
 						action='store_true', help='run in high verbosity mode')
 		args = parser.parse_args(sys.argv[2:])
@@ -607,7 +634,8 @@ class condor_task():
 				for dir in self.skipped_dirs:
 					self.clean_condor_dir(dir)
 				self.resubmit_condor_jobs(self.skipped_dirs, self.sub_opts.verbose)
-
+		if self.sub_opts.move:
+			self.cargo(self.sub_opts.move)
 
 if __name__ == '__main__':
 	condor_task()
