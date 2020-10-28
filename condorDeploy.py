@@ -16,9 +16,7 @@ class condor_task():
 	The most commonly used commands are:
 
 		** DAMPE **
-		dampe_flux_collector    call DAMPE all-electron flux facility
-		dampe_acceptance 	call DAMPE acceptance facility
-		dampe_mc		call DAMPE MC check facility
+		dampe_collector    call DAMPE all-electron flux facility
 		dampe_status		call DAMPE HTCondor status facility
 
 		** HERD **
@@ -56,7 +54,7 @@ class condor_task():
 			for file_name in inputList:
 				if not file_name.startswith('.'):
 					data_list.append(file_name.rstrip('\n'))
-					if len(data_list) == self.sub_opts.depth:
+					if len(data_list) == self.sub_opts.file:
 						_tmp_out_dir = out_dir + "/" + "job_" + str(list_idx)
 						_dir_data = self.write_list_to_file(
 							data_list, _tmp_out_dir)
@@ -88,7 +86,6 @@ class condor_task():
 						filename.rstrip('\n'))
 
 	def parse_timing_info(self):
-
 		for year in self.years_content:
 			for month in self.years_content[year]:
 				out_dir = self.sub_opts.output + "/" + year + month
@@ -248,14 +245,12 @@ class condor_task():
 			dataListPath = cDir + str("/dataList.txt")
 			try:
 				with open(bashScriptPath, "w") as outScript:
-					if task == "eflux_acceptance":
-						self.acceptance_task(outScript, dataListPath, cDir)
-					elif task == "eflux_collector":
-						self.flux_task(outScript, dataListPath, cDir)
-					elif task == "eflux_ntuples":
-						self.flux_ntuple_task(outScript, dataListPath, cDir)
-					elif task == "MC_check":
-						self.mc_check_task(outScript, dataListPath, cDir)
+					if task == "data_collector":
+						self.data_collector_task(outScript, dataListPath, cDir)
+					elif task == "mc_collector":
+						self.mc_collector_task(outScript, dataListPath, cDir)
+					elif task == "ntuples":
+						self.ntuple_task(outScript, dataListPath, cDir)
 					elif task == "HERD_anisotropy":
 						self.create_rti_tree(
 							cDir, dataListPath, self.sub_opts.verbose)
@@ -281,19 +276,19 @@ class condor_task():
 			subprocess.run(
 				['condor_submit -name sn-01.cr.cnaf.infn.it -spool {}'.format(subFilePath)], shell=True, check=True)
 
-	def acceptance_task(self, outScript, dataListPath, cDir):
+	def mc_collector_task(self, outScript, dataListPath, cDir):
 		tmpOutDir = cDir + str("/outFiles")
 		outScript.write("#!/usr/bin/env bash\n")
 		outScript.write("source /cvmfs/dampe.cern.ch/centos7/etc/setup.sh\n")
 		outScript.write("dampe_init trunk\n")
 		outScript.write('mkdir {}\n'.format(tmpOutDir))
-		outScript.write('{} -w {} -i {} -d {} -a -v'.format(
+		outScript.write('{} -w {} -i {} -d {} -m -v'.format(
 			self.sub_opts.executable,
 			self.sub_opts.config,
 			dataListPath,
 			tmpOutDir))
 
-	def flux_task(self, outScript, dataListPath, cDir):
+	def data_collector_task(self, outScript, dataListPath, cDir):
 		tmpOutDir = cDir + str("/outFiles")
 		outScript.write("#!/usr/bin/env bash\n")
 		outScript.write("source /cvmfs/dampe.cern.ch/centos7/etc/setup.sh\n")
@@ -305,7 +300,7 @@ class condor_task():
 			dataListPath,
 			tmpOutDir))
 
-	def flux_ntuple_task(self, outScript, dataListPath, cDir):
+	def ntuple_task(self, outScript, dataListPath, cDir):
 		tmpOutDir = cDir + str("/outFiles")
 		outScript.write("#!/usr/bin/env bash\n")
 		outScript.write("source /cvmfs/dampe.cern.ch/centos7/etc/setup.sh\n")
@@ -317,36 +312,30 @@ class condor_task():
 			dataListPath,
 			tmpOutDir))
 
-	def mc_check_task(self, outScript, dataListPath, cDir):
-		tmpOutDir = cDir + str("/outFiles")
-		outScript.write("#!/usr/bin/env bash\n")
-		outScript.write("source /cvmfs/dampe.cern.ch/centos7/etc/setup.sh\n")
-		outScript.write("dampe_init trunk\n")
-		outScript.write('mkdir {}\n'.format(tmpOutDir))
-		outScript.write('python {} -l {} -d {} -v'.format(
-			self.sub_opts.executable,
-			dataListPath,
-			tmpOutDir))
-
 	def herd_anisotropy_task(self, outScript, dataListPath, cDir):
 		tmpOutDir = cDir + str("/outFiles")
 		outScript.write("#!/usr/bin/env bash\n")
 
-	def dampe_flux_collector(self):
+	def dampe_collector(self):
 		parser = ArgumentParser(
-			description='DAMPE all-electron flux collector facility')
+			description='DAMPE all-electron collector facility')
 		parser.add_argument("-l", "--list", type=str,
 							dest='list', help='Input DATA/MC list')
+		parser.add_argument("-c", "--config", type=str,
+							dest='config', help='Software Config Directory')
 		parser.add_argument("-o", "--output", type=str,
 							dest='output', help='HTC output directory')
+		parser.add_argument("-m", "--mc", dest='mc',
+							default=False, action='store_true', help='MC event collector')
+		parser.add_argument("-d", "--data", dest='data',
+							default=False, action='store_true', help='DATA event collector')
 		parser.add_argument("-n", "--ntuple", dest='ntuple',
 							default=False, action='store_true', help='nTuple facility')
-		parser.add_argument("-d", "--depth", type=int, dest='depth',
+		parser.add_argument("-f", "--file", type=int, dest='file',
 							const=100, nargs='?', help='files to process in job')
 		parser.add_argument("-x", "--executable", type=str,
 							dest='executable', help='Analysis script')
-		parser.add_argument("-c", "--config", type=str,
-							dest='config', help='Software Config Directory')
+		
 		parser.add_argument("-v", "--verbose", dest='verbose', default=False,
 							action='store_true', help='run in high verbosity mode')
 		parser.add_argument("-r", "--recreate", dest='recreate', default=False,
@@ -357,10 +346,13 @@ class condor_task():
 		if self.sub_opts.ntuple:
 			self.extract_timing_info()
 			self.parse_timing_info()
-			self.create_condor_files(task="eflux_ntuples")
+			self.create_condor_files(task="ntuples")
 		else:
 			self.parse_input_list()
-			self.create_condor_files(task="eflux_collector")
+			if self.sub_opts.data:
+				self.create_condor_files(task="data_collector")
+			if self.sub_opts.mc:
+				self.create_condor_files(task="mc_collector")
 		self.submit_jobs()
 
 	def dampe_acceptance(self):
