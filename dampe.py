@@ -267,37 +267,35 @@ class dampe_helper():
         self.create_condor_files()
         self.submit_jobs()
 
-    def getListOfFiles(self, condor_wd, ntuple_flag=False):
+    def getListOfFiles(self, condor_wd):
         from ROOT import TFile
 
-        if not ntuple_flag:
-            # Starting loop on output condor dirs
-            for tmp_dir in os.listdir(condor_wd):
-                if tmp_dir.startswith('job_'):
-                    full_dir_path = condor_wd + "/" + tmp_dir
-                    expected_condor_outDir = full_dir_path + "/outFiles"
-                    # Check if 'outFiles' dir exists
-                    if os.path.isdir(expected_condor_outDir):
-                        _list_dir = os.listdir(expected_condor_outDir)
-                        tmp_acc_full_path = ""
-                        for file in _list_dir:
-                            if file.endswith(".root"):
-                                tmp_acc_full_path = expected_condor_outDir + "/" + file
-                                break
-                        # Check if output ROOT file exists
-                        if os.path.isfile(tmp_acc_full_path):
-                            tmp_acc_file = TFile.Open(
-                                tmp_acc_full_path, "READ")
-                            # Check if output ROOT file is redable
-                            if tmp_acc_file.IsOpen():
-                                # Check if output ROOT file has keys
-                                outKeys = tmp_acc_file.GetNkeys()
-                                if outKeys:
-                                    self.data_dirs.append(full_dir_path)
-                                else:
-                                    # output ROOT file has been open but has not keys
-                                    self.skipped_dirs.append(full_dir_path)
-                                    self.skipped_file_noKeys += 1
+        # Starting loop on output condor dirs
+        for tmp_dir in os.listdir(condor_wd):
+            if tmp_dir.startswith('job_'):
+                full_dir_path = condor_wd + "/" + tmp_dir
+                expected_condor_outDir = full_dir_path + "/outFiles"
+                # Check if 'outFiles' dir exists
+                if os.path.isdir(expected_condor_outDir):
+                    _list_dir = os.listdir(expected_condor_outDir)
+                    tmp_acc_full_path = ""
+                    for file in _list_dir:
+                        if file.endswith(".root"):
+                            tmp_acc_full_path = expected_condor_outDir + "/" + file
+                            break
+                    # Check if output ROOT file exists
+                    if os.path.isfile(tmp_acc_full_path):
+                        tmp_acc_file = TFile.Open(tmp_acc_full_path, "READ")
+                        # Check if output ROOT file is redable
+                        if tmp_acc_file.IsOpen():
+                            # Check if output ROOT file has keys
+                            outKeys = tmp_acc_file.GetNkeys()
+                            if outKeys:
+                                self.data_dirs.append(full_dir_path)
+                            else:
+                                # output ROOT file has been open but has not keys
+                                self.skipped_dirs.append(full_dir_path)
+                                self.skipped_file_noKeys += 1
                             else:
                                 # output ROOT file has not been opened correctly
                                 self.skipped_dirs.append(full_dir_path)
@@ -310,65 +308,6 @@ class dampe_helper():
                         # 'outFiles' dir does not exists
                         self.skipped_dirs.append(full_dir_path)
                         self.skipped_file_notFinalDir += 1
-        else:
-            # Starting loop on output condor dirs
-            for tmp_dir in os.listdir(condor_wd):
-                _dir_path = condor_wd + "/" + tmp_dir
-                for jobs_dir in os.listdir(_dir_path):
-                    if jobs_dir.startswith('job_'):
-                        full_dir_path = _dir_path
-                        full_dir_path += "/" + jobs_dir
-                        expected_condor_outDir = full_dir_path + "/outFiles"
-                        # Check if 'outFiles' dir exists
-                        if os.path.isdir(expected_condor_outDir):
-                            files_in_dir = [
-                                _file for _file in os.listdir(expected_condor_outDir) if _file.endswith(".root")]
-                            tmp_acc_full_path = [
-                                expected_condor_outDir + "/" + _file for _file in files_in_dir]
-                            # Check if the output file number is consistent
-                            if (len(tmp_acc_full_path) == self.ntuples_file_size):
-                                # Check if output ROOT files exists
-                                _good_file = [False]*len(tmp_acc_full_path)
-                                for elm_idx, elm in enumerate(tmp_acc_full_path):
-                                    if os.path.isfile(elm):
-                                        tmp_acc_file = TFile.Open(elm, "READ")
-                                        # Check if output ROOT file is readable
-                                        if tmp_acc_file.IsOpen():
-                                            # Check if output ROOT file has keys
-                                            outKeys = tmp_acc_file.GetNkeys()
-                                            if outKeys:
-                                                _good_file[elm_idx] = True
-                                            else:
-                                                # output ROOT file has been open but has not keys
-                                                self.skipped_dirs.append(
-                                                    full_dir_path)
-                                                self.skipped_file_noKeys += 1
-                                                break
-                                        else:
-                                            # output ROOT file has not been opened correctly
-                                            self.skipped_dirs.append(
-                                                full_dir_path)
-                                            self.skipped_file_notReadable += 1
-                                            break
-                                    else:
-                                        # output ROOT file does not exist
-                                        self.skipped_dirs.append(full_dir_path)
-                                        self.skipped_file_noSingleROOTfile += 1
-                                        break
-                                if all(_good_file):
-                                    self.data_dirs.append(full_dir_path)
-                            elif not tmp_acc_full_path:
-                                # output ROOT file does not exist
-                                self.skipped_dirs.append(full_dir_path)
-                                self.skipped_file_notROOTfile += 1
-                            else:
-                                # not consistent number of output files
-                                self.skipped_dirs.append(full_dir_path)
-                                self.skipped_file_notAllOutput += 1
-                        else:
-                            # 'outFiles' dir does not exists
-                            self.skipped_dirs.append(full_dir_path)
-                            self.skipped_file_notFinalDir += 1
 
     def clean_condor_dir(self, dir):
         os.chdir(dir)
@@ -424,8 +363,6 @@ class dampe_helper():
             description='DAMPE HTCondor Job Status Controller')
         parser.add_argument("-i", "--input", type=str,
                             dest='input', help='Input condor jobs WD')
-        parser.add_argument("-n", "--ntuple", dest='ntuple',
-                            default=False, action='store_true', help='ntuple data dype')
         parser.add_argument("-r", "--resubmit", dest='resubmit', default=False,
                             action='store_true', help='HTCondor flag to resubmit failed jobs')
         parser.add_argument("-e", "--erase", dest='erase', default=False,
@@ -437,7 +374,7 @@ class dampe_helper():
         args = parser.parse_args(sys.argv[2:])
         self.sub_opts = args
 
-        self.getListOfFiles(self.sub_opts.input, self.sub_opts.ntuple)
+        self.getListOfFiles(self.sub_opts.input)
 
         if self.sub_opts.verbose:
             print('Found {} GOOD condor directories'.format(len(self.data_dirs)))
