@@ -369,11 +369,12 @@ class dampe_helper():
                             action='store_true', help='Remove ROOT files with no keys')
         parser.add_argument("-m", "--move", type=str,
                             dest='move', help='Move ROOT nTuples to target directory')
+        parser.add_argument("-l", "--list", dest='list', default=False,
+                            action='store_true', help='Produce file list')
         parser.add_argument("-v", "--verbose", dest='verbose', default=False,
                             action='store_true', help='run in high verbosity mode')
         args = parser.parse_args(sys.argv[2:])
         self.sub_opts = args
-
         self.getListOfFiles(self.sub_opts.input)
 
         if self.sub_opts.verbose:
@@ -405,7 +406,11 @@ class dampe_helper():
                     self.skipped_dirs, self.sub_opts.verbose)
         if self.sub_opts.move:
             self.cargo(self.sub_opts.move)
-
+        if self.sub_opts.list:
+            _list_path = self.sub_opts.input[self.sub_opts.input.rfind('/')+1:] + ".txt"
+            with open(_list_path, "w") as _final_list:
+                for elm in self.data_dirs:
+                    _final_list.write(elm + "\n")
 
 if __name__ == '__main__':
     dampe_helper()
