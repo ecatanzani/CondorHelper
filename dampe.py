@@ -13,6 +13,7 @@ class dampe_helper():
         self.years_content = {}
         self.skipped_dirs = []
         self.data_dirs = []
+        self.data_files = []
         self.skipped_file_notFinalDir = 0
         self.skipped_file_notAllOutput = 0
         self.skipped_file_noSingleROOTfile = 0
@@ -292,6 +293,7 @@ class dampe_helper():
                             outKeys = tmp_acc_file.GetNkeys()
                             if outKeys:
                                 self.data_dirs.append(full_dir_path)
+                                self.data_files.append(tmp_acc_full_path)
                             else:
                                 # output ROOT file has been open but has not keys
                                 self.skipped_dirs.append(full_dir_path)
@@ -409,7 +411,7 @@ class dampe_helper():
         if self.sub_opts.list:
             _list_path = self.sub_opts.input[self.sub_opts.input.rfind('/')+1:] + ".txt"
             with open(_list_path, "w") as _final_list:
-                for elm in self.data_dirs:
+                for elm in self.data_files:
                     _final_list.write(elm + "\n")
 
 if __name__ == '__main__':
