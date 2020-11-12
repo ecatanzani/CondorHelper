@@ -296,18 +296,18 @@ class dampe_helper():
                                 # output ROOT file has been open but has not keys
                                 self.skipped_dirs.append(full_dir_path)
                                 self.skipped_file_noKeys += 1
-                            else:
-                                # output ROOT file has not been opened correctly
-                                self.skipped_dirs.append(full_dir_path)
-                                self.skipped_file_notReadable += 1
                         else:
-                            # output ROOT file does not exist
+                            # output ROOT file has not been opened correctly
                             self.skipped_dirs.append(full_dir_path)
-                            self.skipped_file_notROOTfile += 1
+                            self.skipped_file_notReadable += 1
                     else:
-                        # 'outFiles' dir does not exists
+                        # output ROOT file does not exist
                         self.skipped_dirs.append(full_dir_path)
-                        self.skipped_file_notFinalDir += 1
+                        self.skipped_file_notROOTfile += 1
+                else:
+                    # 'outFiles' dir does not exists
+                    self.skipped_dirs.append(full_dir_path)
+                    self.skipped_file_notFinalDir += 1
 
     def clean_condor_dir(self, dir):
         os.chdir(dir)
