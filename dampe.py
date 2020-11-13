@@ -268,6 +268,21 @@ class dampe_helper():
         self.create_condor_files()
         self.submit_jobs()
 
+    def TestROOTFile(self, path):
+        from ROOT import TFile
+        _tmp_file = TFile(path)
+        if _tmp_file and not _tmp_file.IsOpen():
+            return False
+        elif _tmp_file and _tmp_file.IsOpen() and _tmp_file.IsZombie():
+            _tmp_file.Close()
+            return False
+        elif _tmp_file and _tmp_file.IsOpen() and _tmp_file.TestBit(TFile.kRecovered):
+            _tmp_file.Close()
+            return False
+        else:
+            _tmp_file.Close()
+            return True
+
     def getListOfFiles(self, condor_wd):
         from ROOT import TFile
 
@@ -286,18 +301,20 @@ class dampe_helper():
                             break
                     # Check if output ROOT file exists
                     if os.path.isfile(tmp_acc_full_path):
-                        tmp_acc_file = TFile.Open(tmp_acc_full_path, "READ")
                         # Check if output ROOT file is redable
-                        if tmp_acc_file.IsOpen():
-                            # Check if output ROOT file has keys
-                            outKeys = tmp_acc_file.GetNkeys()
-                            if outKeys:
-                                self.data_dirs.append(full_dir_path)
-                                self.data_files.append(tmp_acc_full_path)
-                            else:
-                                # output ROOT file has been open but has not keys
-                                self.skipped_dirs.append(full_dir_path)
-                                self.skipped_file_noKeys += 1
+                        if self.TestROOTFile(tmp_acc_full_path):
+                            tmp_acc_file = TFile.Open(tmp_acc_full_path, "READ")
+                            # Check if output ROOT file is redable
+                            if tmp_acc_file.IsOpen():
+                                # Check if output ROOT file has keys
+                                outKeys = tmp_acc_file.GetNkeys()
+                                if outKeys:
+                                    self.data_dirs.append(full_dir_path)
+                                    self.data_files.append(tmp_acc_full_path)
+                                else:
+                                    # output ROOT file has been open but has not keys
+                                    self.skipped_dirs.append(full_dir_path)
+                                    self.skipped_file_noKeys += 1
                         else:
                             # output ROOT file has not been opened correctly
                             self.skipped_dirs.append(full_dir_path)
@@ -409,10 +426,12 @@ class dampe_helper():
         if self.sub_opts.move:
             self.cargo(self.sub_opts.move)
         if self.sub_opts.list:
-            _list_path = self.sub_opts.input[self.sub_opts.input.rfind('/')+1:] + ".txt"
+            _list_path = self.sub_opts.input[self.sub_opts.input.rfind(
+                '/')+1:] + ".txt"
             with open(_list_path, "w") as _final_list:
                 for elm in self.data_files:
                     _final_list.write(elm + "\n")
+
 
 if __name__ == '__main__':
     dampe_helper()
