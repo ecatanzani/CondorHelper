@@ -204,32 +204,17 @@ class dampe_helper():
         outScript.write("dampe_init trunk\n")
         outScript.write('mkdir {}\n'.format(tmpOutDir))
         if self.sub_opts.mc:
-            if self.sub_opts.ntuple:
-                outScript.write('{} -w {} -i {} -d {} -m -n -v'.format(
-                    self.sub_opts.executable,
-                    self.sub_opts.config,
-                    dataListPath,
-                    tmpOutDir))
-            else:
-                outScript.write('{} -w {} -i {} -d {} -m -v'.format(
-                    self.sub_opts.executable,
-                    self.sub_opts.config,
-                    dataListPath,
-                    tmpOutDir))
-
+            outScript.write('{} -w {} -i {} -d {} -m -v'.format(
+                self.sub_opts.executable,
+                self.sub_opts.config,
+                dataListPath,
+                tmpOutDir))
         if self.sub_opts.data:
-            if self.sub_opts.ntuple:
-                outScript.write('{} -w {} -i {} -d {} -r -n -v'.format(
-                    self.sub_opts.executable,
-                    self.sub_opts.config,
-                    dataListPath,
-                    tmpOutDir))
-            else:
-                outScript.write('{} -w {} -i {} -d {} -r -v'.format(
-                    self.sub_opts.executable,
-                    self.sub_opts.config,
-                    dataListPath,
-                    tmpOutDir))
+            outScript.write('{} -w {} -i {} -d {} -r -v'.format(
+                self.sub_opts.executable,
+                self.sub_opts.config,
+                dataListPath,
+                tmpOutDir))
 
     def collector(self):
         parser = ArgumentParser(
@@ -244,8 +229,6 @@ class dampe_helper():
                             default=False, action='store_true', help='MC event collector')
         parser.add_argument("-d", "--data", dest='data',
                             default=False, action='store_true', help='DATA event collector')
-        parser.add_argument("-n", "--ntuple", dest='ntuple',
-                            default=False, action='store_true', help='nTuple facility')
         parser.add_argument("-t", "--time_ntuple", dest='time_ntuple',
                             default=False, action='store_true', help='nTuple time ID')
         parser.add_argument("-f", "--file", type=int, dest='file',
@@ -260,7 +243,7 @@ class dampe_helper():
         args = parser.parse_args(sys.argv[2:])
         self.sub_opts = args
 
-        if self.sub_opts.time_ntuple and self.sub_opts.data:
+        if self.sub_opts.time_ntuple:
             self.extract_timing_info()
             self.parse_timing_info()
         else:
