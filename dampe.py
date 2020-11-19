@@ -29,6 +29,7 @@ class dampe_helper():
 		** DAMPE **
 		collector   	call DAMPE all-electron flux facility
 		status		call DAMPE HTCondor status facility
+        cargo		move ROOT files to final destination
 	''')
 
         parser.add_argument('command', help='Subcommand to run')
@@ -335,7 +336,22 @@ class dampe_helper():
             subprocess.run(
                 "condor_submit -name sn-01.cr.cnaf.infn.it -spool crawler.sub", shell=True, check=True)
 
-    def cargo(self, target_dir):
+    def cargo(self):
+        parser = ArgumentParser(
+            description='CARGO Utility')
+        parser.add_argument("-i", "--input", type=str,
+                            dest='input', help='Input condor jobs WD')
+        parser.add_argument("-o", "--output", type=str,
+                            dest='output', help='Output ROOT files WD')
+        args = parser.parse_args(sys.argv[2:])
+        self.sub_opts = args
+
+        for file in self.data_files:
+            _idx = _mdir.rindex('/')
+            _filename = file[_idx+1:]
+            shutil.copy2(file, self.sub_opts.output + "/" + _filename)
+        
+        '''
         _dict = {}
         for _mdir in self.data_dirs:
             last_data_idx = _mdir.rindex('/')
@@ -359,6 +375,7 @@ class dampe_helper():
                     _src = _data_path + "/" + _file
                     _dest = _path + "/" + f"{_file[:_idx]}_{_job}.root"
                     shutil.copy2(_src, _dest)
+        '''
 
     def status(self):
         parser = ArgumentParser(
@@ -369,8 +386,6 @@ class dampe_helper():
                             action='store_true', help='HTCondor flag to resubmit failed jobs')
         parser.add_argument("-e", "--erase", dest='erase', default=False,
                             action='store_true', help='Remove ROOT files with no keys')
-        parser.add_argument("-m", "--move", type=str,
-                            dest='move', help='Move ROOT nTuples to target directory')
         parser.add_argument("-l", "--list", dest='list', default=False,
                             action='store_true', help='Produce file list')
         parser.add_argument("-v", "--verbose", dest='verbose', default=False,
@@ -406,8 +421,6 @@ class dampe_helper():
                     self.clean_condor_dir(dir)
                 self.resubmit_condor_jobs(
                     self.skipped_dirs, self.sub_opts.verbose)
-        if self.sub_opts.move:
-            self.cargo(self.sub_opts.move)
         if self.sub_opts.list:
             _list_path = self.sub_opts.input[self.sub_opts.input.rfind(
                 '/')+1:] + ".txt"
