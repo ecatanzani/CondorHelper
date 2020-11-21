@@ -287,7 +287,8 @@ class dampe_helper():
                     if os.path.isfile(tmp_acc_full_path):
                         # Check if output ROOT file is redable
                         if self.TestROOTFile(tmp_acc_full_path):
-                            tmp_acc_file = TFile.Open(tmp_acc_full_path, "READ")
+                            tmp_acc_file = TFile.Open(
+                                tmp_acc_full_path, "READ")
                             # Check if output ROOT file is redable
                             if tmp_acc_file.IsOpen():
                                 # Check if output ROOT file has keys
@@ -351,13 +352,12 @@ class dampe_helper():
             print("Scanning original data directory...")
         self.getListOfFiles(self.sub_opts.input)
         print("Start moving ROOT files...")
-        for file in self.data_files:
-            _idx = _mdir.rindex('/')
-            _filename = file[_idx+1:]
+        for _ctn, _file in enumerate(self.data_files):
+            _filename = "simu_result_" + str(_ctn)
             _dest = self.sub_opts.output + "/" + _filename
             if self.sub_opts.verbose:
                 print(f"Moving {_file} -> {_dest}")
-            shutil.copy2(file, _dest)
+            shutil.copy2(_file, _dest)
 
     def status(self):
         parser = ArgumentParser(
