@@ -404,7 +404,7 @@ class dampe_helper():
         self.getListOfFiles(self.sub_opts.input)
         print("Start moving ROOT files...")
         for _ctn, _file in enumerate(self.data_files):
-            _filename = "simu_result_" + str(_ctn)
+            _filename = "simu_result_" + str(_ctn) + ".root"
             _dest = self.sub_opts.output + "/" + _filename
             if self.sub_opts.verbose:
                 print(f"Moving {_file} -> {_dest}")
