@@ -29,6 +29,7 @@ class dampe_helper():
 		** DAMPE **
 		collector   	call DAMPE all-electron flux facility
 		status		call DAMPE HTCondor status facility
+        kompressor		call DAMPE Kompressor facility
         cargo		move ROOT files to final destination
 	''')
 
@@ -148,7 +149,7 @@ class dampe_helper():
                     print('Created output list: {}'.format(list_path))
         return (good_dir, tmp_dir_name)
 
-    def create_condor_files(self):
+    def create_condor_files(self, kompressor=False):
         for cDir in self.condorDirs:
 
             # Find out paths
@@ -180,7 +181,10 @@ class dampe_helper():
             dataListPath = cDir + str("/dataList.txt")
             try:
                 with open(bashScriptPath, "w") as outScript:
-                    self.collector_task(outScript, dataListPath, cDir)
+                    if not kompressor: 
+                        self.collector_task(outScript, dataListPath, cDir)
+                    else:
+                        self.kompressor_task(outScript, dataListPath, cDir)
             except OSError:
                 print('ERROR creating HTCondor bash script file in: {}'.format(cDir))
                 raise
@@ -212,6 +216,24 @@ class dampe_helper():
                 tmpOutDir))
         if self.sub_opts.data:
             outScript.write('{} -w {} -i {} -d {} -r -v'.format(
+                self.sub_opts.executable,
+                self.sub_opts.config,
+                dataListPath,
+                tmpOutDir))
+
+    def kompressor_task(self, outScript, dataListPath, cDir):
+        tmpOutDir = cDir + str("/outFiles")
+        outScript.write("#!/usr/bin/env bash\n")
+        outScript.write("source /storage/gpfs_data/dampe/users/ecatanzani/deps/root-6.20.04/bin/thisroot.sh\n")
+        outScript.write('mkdir {}\n'.format(tmpOutDir))
+        if self.sub_opts.mc:
+            outScript.write('{} -w {} -i {} -d {} -m -v'.format(
+                self.sub_opts.executable,
+                self.sub_opts.config,
+                dataListPath,
+                tmpOutDir))
+        if self.sub_opts.data:
+            outScript.write('{} -w {} -i {} -d {} -v'.format(
                 self.sub_opts.executable,
                 self.sub_opts.config,
                 dataListPath,
@@ -250,6 +272,35 @@ class dampe_helper():
         else:
             self.parse_input_list()
         self.create_condor_files()
+        self.submit_jobs()
+
+    def kompressor(self):
+        parser = ArgumentParser(
+            description='DAMPE all-electron collector facility')
+        parser.add_argument("-l", "--list", type=str,
+                            dest='list', help='Input DATA/MC list')
+        parser.add_argument("-c", "--config", type=str,
+                            dest='config', help='Software Config Directory')
+        parser.add_argument("-o", "--output", type=str,
+                            dest='output', help='HTC output directory')
+        parser.add_argument("-m", "--mc", dest='mc',
+                            default=False, action='store_true', help='MC event collector')
+        parser.add_argument("-d", "--data", dest='data',
+                            default=False, action='store_true', help='DATA event collector')
+        parser.add_argument("-f", "--file", type=int, dest='file',
+                            const=10, nargs='?', help='files to process in job')
+        parser.add_argument("-x", "--executable", type=str,
+                            dest='executable', help='Analysis script')
+
+        parser.add_argument("-v", "--verbose", dest='verbose', default=False,
+                            action='store_true', help='run in high verbosity mode')
+        parser.add_argument("-r", "--recreate", dest='recreate', default=False,
+                            action='store_true', help='recreate output dirs if present')
+        args = parser.parse_args(sys.argv[2:])
+        self.sub_opts = args
+
+        self.parse_input_list()
+        self.create_condor_files(kompressor=True)
         self.submit_jobs()
 
     def TestROOTFile(self, path):
