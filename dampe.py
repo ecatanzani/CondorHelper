@@ -163,6 +163,9 @@ class dampe_helper():
             try:
                 with open(subFilePath, 'w') as outSub:
                     outSub.write("universe = vanilla\n")
+                    if kompressor:
+                        outSub.write("request_cpus = 4\n")
+                        outSub.write("request_memory = 4096\n")
                     outSub.write('executable = {}\n'.format(bashScriptPath))
                     outSub.write('output = {}\n'.format(outputPath))
                     outSub.write('error = {}\n'.format(errPath))
