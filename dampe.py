@@ -149,7 +149,7 @@ class dampe_helper():
                     print('Created output list: {}'.format(list_path))
         return (good_dir, tmp_dir_name)
 
-    def create_condor_files(self, kompressor=False):
+    def create_condor_files(self, kompressor=False, mt=False):
         for cDir in self.condorDirs:
 
             # Find out paths
@@ -164,8 +164,9 @@ class dampe_helper():
                 with open(subFilePath, 'w') as outSub:
                     outSub.write("universe = vanilla\n")
                     if kompressor:
-                        outSub.write("request_cpus = 4\n")
-                        outSub.write("request_memory = 4096\n")
+                        if mt:
+                            outSub.write("request_cpus = 4\n")
+                            outSub.write("request_memory = 4096\n")
                     outSub.write('executable = {}\n'.format(bashScriptPath))
                     outSub.write('output = {}\n'.format(outputPath))
                     outSub.write('error = {}\n'.format(errPath))
