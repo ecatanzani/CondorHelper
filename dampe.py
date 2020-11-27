@@ -327,17 +327,28 @@ class dampe_helper():
         self.getListOfFiles(self.sub_opts.input)
         if self.sub_opts.verbose:
             print(f"Gong to add {len(self.data_files)} ROOT files...")
-
-        _cmd = f"hadd {self.sub_opts.output}"
-        for _elm in self.data_files:
-            _cmd += f" {str(_elm)}"
         
-        _cmd_name = self.sub_opts.output[:self.sub_opts.output.rfind('.')] + str(".sh")
-        with open (_cmd_name, 'w') as _file:
-            _file.write("#!/usr/bin/env bash\n")
-            _file.write(_cmd)
-        subprocess.run(f"chmod +x {_cmd_name}", shell=True, check=True)
-        subprocess.run(f"./{_cmd_name}", shell=True, check=True)
+        _k_step = 10
+        _file_list = str()
+        _list_idx = 0
+        _tmp_out_name = self.sub_opts.output[:self.sub_opts.output.rfind('.')]
+        for fidx, file in enumerate(self.data_files):
+            if (fidx+1)%_k_step != 0:
+                _file_list += f" {file}"
+            else:
+                _out_full_name = f"{_tmp_out_name}_{_list_idx}.root"
+                _cmd = f"hadd {_out_full_name}{_file_list}"
+                if self.sub_opts.verbose:
+                    print(_cmd)
+                subprocess.run(_cmd, shell=True, check=True)
+                _file_list = f" {_out_full_name}"
+                _list_idx += 1
+        if _file_list:
+            _out_full_name = f"{_tmp_out_name}_{_list_idx}.root"
+            if self.sub_opts.verbose:
+                print(_cmd)
+            _cmd = f"hadd {_out_full_name}{_file_list}"
+            subprocess.run(_cmd, shell=True, check=True)
 
     def TestROOTFile(self, path):
         from ROOT import TFile
