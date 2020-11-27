@@ -30,6 +30,7 @@ class dampe_helper():
 		collector   	call DAMPE all-electron flux facility
 		status		call DAMPE HTCondor status facility
         kompressor		call DAMPE Kompressor facility
+        kompressor_add		add Kompressor out files
         cargo		move ROOT files to final destination
 	''')
 
@@ -280,7 +281,7 @@ class dampe_helper():
 
     def kompressor(self):
         parser = ArgumentParser(
-            description='DAMPE all-electron collector facility')
+            description='DAMPE Kompressor facility')
         parser.add_argument("-l", "--list", type=str,
                             dest='list', help='Input DATA/MC list')
         parser.add_argument("-c", "--config", type=str,
@@ -300,12 +301,35 @@ class dampe_helper():
                             action='store_true', help='run in high verbosity mode')
         parser.add_argument("-r", "--recreate", dest='recreate', default=False,
                             action='store_true', help='recreate output dirs if present')
+
         args = parser.parse_args(sys.argv[2:])
         self.sub_opts = args
-
+        
         self.parse_input_list()
         self.create_condor_files(kompressor=True)
         self.submit_jobs()
+
+    def kompressor_add(self):
+        parser = ArgumentParser(
+            description='Add Kompressor out files')
+        parser.add_argument("-i", "--input", type=str,
+                            dest='input', help='Input condor jobs WD')
+        parser.add_argument("-o", "--output", type=str,
+                            dest='output', help='HTC output directory')
+        parser.add_argument("-v", "--verbose", dest='verbose', default=False,
+                            action='store_true', help='run in high verbosity mode')
+        
+        args = parser.parse_args(sys.argv[2:])
+        self.sub_opts = args
+        
+        if self.sub_opts.verbose:
+            print("Scanning original data directory...")
+        self.getListOfFiles(self.sub_opts.input)
+
+        _cmd = f"hadd {self.sub_opts.output}"
+        for _elm in self.data_files:
+            _cmd += f" {str(_elm)}"
+        subprocess.run([_cmd], shell=True, check=True)
 
     def TestROOTFile(self, path):
         from ROOT import TFile
