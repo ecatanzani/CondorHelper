@@ -315,7 +315,7 @@ class dampe_helper():
         parser.add_argument("-i", "--input", type=str,
                             dest='input', help='Input condor jobs WD')
         parser.add_argument("-o", "--output", type=str,
-                            dest='output', help='HTC output directory')
+                            dest='output', help='output ROOT file')
         parser.add_argument("-v", "--verbose", dest='verbose', default=False,
                             action='store_true', help='run in high verbosity mode')
         
@@ -325,11 +325,19 @@ class dampe_helper():
         if self.sub_opts.verbose:
             print("Scanning original data directory...")
         self.getListOfFiles(self.sub_opts.input)
+        if self.sub_opts.verbose:
+            print(f"Gong to add {len(self.data_files)} ROOT files...")
 
         _cmd = f"hadd {self.sub_opts.output}"
         for _elm in self.data_files:
             _cmd += f" {str(_elm)}"
-        subprocess.run([_cmd], shell=True, check=True)
+        
+        _cmd_name = self.sub_opts.output[:self.sub_opts.output.rfind('.')] + str(".sh")
+        with open (_cmd_name, 'w') as _file:
+            _file.write("#!/usr/bin/env bash\n")
+            _file.write(_cmd)
+        subprocess.run(f"chmod +x {_cmd_name}", shell=True, check=True)
+        subprocess.run(f"./{_cmd_name}", shell=True, check=True)
 
     def TestROOTFile(self, path):
         from ROOT import TFile
