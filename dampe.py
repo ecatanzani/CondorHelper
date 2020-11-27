@@ -326,7 +326,7 @@ class dampe_helper():
             print("Scanning original data directory...")
         self.getListOfFiles(self.sub_opts.input)
         if self.sub_opts.verbose:
-            print(f"Gong to add {len(self.data_files)} ROOT files...")
+            print(f"Going to add {len(self.data_files)} ROOT files...")
         
         _k_step = 10
         _file_list = str()
