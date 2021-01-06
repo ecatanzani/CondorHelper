@@ -230,7 +230,7 @@ class dampe_helper():
         tmpOutDir = cDir + str("/outFiles")
         outScript.write("#!/usr/bin/env bash\n")
         outScript.write("source /opt/rh/devtoolset-7/enable\n")
-        outScript.write("source /storage/gpfs_data/dampe/users/ecatanzani/deps/root-6.22.06/bin/thisroot.sh\n")
+        outScript.write("source /storage/gpfs_data/dampe/users/ecatanzani/deps/root-6.22/bin/thisroot.sh\n")
         outScript.write('mkdir {}\n'.format(tmpOutDir))
         if self.sub_opts.mc:
             outScript.write('{} -w {} -i {} -d {} -m -v'.format(
