@@ -233,17 +233,33 @@ class dampe_helper():
         outScript.write("source /storage/gpfs_data/dampe/users/ecatanzani/deps/root-6.22/bin/thisroot.sh\n")
         outScript.write('mkdir {}\n'.format(tmpOutDir))
         if self.sub_opts.mc:
-            outScript.write('{} -w {} -i {} -d {} -m -v'.format(
-                self.sub_opts.executable,
-                self.sub_opts.config,
-                dataListPath,
-                tmpOutDir))
+            if self.sub_opts.behaviour:
+                outScript.write('{} -w {} -i {} -d {} -r {} -m -v'.format(
+                    self.sub_opts.executable,
+                    self.sub_opts.config,
+                    dataListPath,
+                    tmpOutDir,
+                    self.sub_opts.behaviour))
+            else:
+                outScript.write('{} -w {} -i {} -d {} -m -v'.format(
+                    self.sub_opts.executable,
+                    self.sub_opts.config,
+                    dataListPath,
+                    tmpOutDir))
         if self.sub_opts.data:
-            outScript.write('{} -w {} -i {} -d {} -v'.format(
-                self.sub_opts.executable,
-                self.sub_opts.config,
-                dataListPath,
-                tmpOutDir))
+            if self.sub_opts.behaviour:
+                outScript.write('{} -w {} -i {} -d {} -r {} -v'.format(
+                    self.sub_opts.executable,
+                    self.sub_opts.config,
+                    dataListPath,
+                    tmpOutDir,
+                    self.sub_opts.behaviour))
+            else:
+                outScript.write('{} -w {} -i {} -d {} -v'.format(
+                    self.sub_opts.executable,
+                    self.sub_opts.config,
+                    dataListPath,
+                    tmpOutDir))
 
     def collector(self):
         parser = ArgumentParser(
@@ -293,6 +309,10 @@ class dampe_helper():
                             default=False, action='store_true', help='MC event collector')
         parser.add_argument("-d", "--data", dest='data',
                             default=False, action='store_true', help='DATA event collector')
+
+        parser.add_argument("-b", "--behaviour", type=str,
+                            dest='behaviour', help='BDT variable regularizer facility')
+
         parser.add_argument("-f", "--file", type=int, dest='file',
                             const=10, nargs='?', help='files to process in job')
         parser.add_argument("-x", "--executable", type=str,
