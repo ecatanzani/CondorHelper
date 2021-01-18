@@ -234,3 +234,4 @@ tags
 .history
 
 # End of https://www.gitignore.io/api/vim,linux,macos,emacs,python,visualstudiocode
+postman/myPrivatePostman.conf
