@@ -232,35 +232,21 @@ class dampe_helper():
         outScript.write("source /opt/rh/devtoolset-7/enable\n")
         outScript.write("source /storage/gpfs_data/dampe/users/ecatanzani/deps/root-6.22/bin/thisroot.sh\n")
         outScript.write('mkdir {}\n'.format(tmpOutDir))
+        
+        _opt_command = ""
         if self.sub_opts.mc:
-            if self.sub_opts.behaviour:
-                outScript.write('{} -w {} -i {} -d {} -r {} -m -v'.format(
-                    self.sub_opts.executable,
-                    self.sub_opts.config,
-                    dataListPath,
-                    tmpOutDir,
-                    self.sub_opts.behaviour))
-            else:
-                outScript.write('{} -w {} -i {} -d {} -m -v'.format(
-                    self.sub_opts.executable,
-                    self.sub_opts.config,
-                    dataListPath,
-                    tmpOutDir))
-        if self.sub_opts.data:
-            if self.sub_opts.behaviour:
-                outScript.write('{} -w {} -i {} -d {} -r {} -v'.format(
-                    self.sub_opts.executable,
-                    self.sub_opts.config,
-                    dataListPath,
-                    tmpOutDir,
-                    self.sub_opts.behaviour))
-            else:
-                outScript.write('{} -w {} -i {} -d {} -v'.format(
-                    self.sub_opts.executable,
-                    self.sub_opts.config,
-                    dataListPath,
-                    tmpOutDir))
+            _opt_command += "-m "
+        if self.sub_opts.behaviour:
+            _opt_command += f"-r {self.sub_opts.behaviour} "
+        if self.sub_opts.tmva_set:
+            _opt_command += f"-t {self.sub_opts.tmva_set} "
+        if self.sub_opts.no_split:
+            _opt_command += f"-n {self.sub_opts.no_split}"
 
+        _command = f"{self.sub_opts.executable} -w {self.sub_opts.config} -i {dataListPath} -d {tmpOutDir} -v {_opt_command}"
+
+        outScript.write(_command)
+        
     def collector(self):
         parser = ArgumentParser(
             description='DAMPE all-electron collector facility')
@@ -307,17 +293,16 @@ class dampe_helper():
                             dest='output', help='HTC output directory')
         parser.add_argument("-m", "--mc", dest='mc',
                             default=False, action='store_true', help='MC event collector')
-        parser.add_argument("-d", "--data", dest='data',
-                            default=False, action='store_true', help='DATA event collector')
-
         parser.add_argument("-b", "--behaviour", type=str,
                             dest='behaviour', help='BDT variable regularizer facility')
-
+        parser.add_argument("-t", "--tmva_set", type=str,
+                            dest='tmva_set', help='Create TMVA Test/Training sets - s(signal)/b(background)')
+        parser.add_argument("-n", "--no_split", type=str,
+                            dest='no_split', help='Create a single Test/Training TMVA set')
         parser.add_argument("-f", "--file", type=int, dest='file',
                             const=10, nargs='?', help='files to process in job')
         parser.add_argument("-x", "--executable", type=str,
                             dest='executable', help='Analysis script')
-
         parser.add_argument("-v", "--verbose", dest='verbose', default=False,
                             action='store_true', help='run in high verbosity mode')
         parser.add_argument("-r", "--recreate", dest='recreate', default=False,
