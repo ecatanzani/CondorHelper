@@ -42,10 +42,10 @@ class dampe_helper():
             exit(1)
         getattr(self, args.command)()
 
-    def parse_input_list(self):
+    def parse_input_list(self, start_idx):
         out_dir = self.sub_opts.output
         with open(self.sub_opts.list, 'r') as inputList:
-            list_idx = 0
+            list_idx = start_idx
             data_list = []
             for file_name in inputList:
                 if not file_name.startswith('.'):
@@ -271,6 +271,8 @@ class dampe_helper():
                             action='store_true', help='run in high verbosity mode')
         parser.add_argument("-r", "--recreate", dest='recreate', default=False,
                             action='store_true', help='recreate output dirs if present')
+        parser.add_argument("-a", "--append", dest='append', default=False,
+                            action='store_true', help='append jobs folder to existing directory')
         args = parser.parse_args(sys.argv[2:])
         self.sub_opts = args
 
@@ -278,7 +280,11 @@ class dampe_helper():
             self.extract_timing_info()
             self.parse_timing_info()
         else:
-            self.parse_input_list()
+            start_idx = 0
+            if self.sub_opts.append:
+                jobs_folder = [ file for file in os.listdir(self.sub_opts.output) if file.startswith('job_') ]
+                start_idx = max([ int(file[file.rfind('_')+1:]) for file in jobs_folder ])+1
+            self.parse_input_list(start_idx)
         self.create_condor_files()
         self.submit_jobs()
 
