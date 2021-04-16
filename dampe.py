@@ -238,6 +238,8 @@ class dampe_helper():
             _opt_command += "-m "
         if self.sub_opts.behaviour:
             _opt_command += f"-r {self.sub_opts.behaviour} "
+        if self.sub_opts.gaussianize:
+            _opt_command += "-g "
         if self.sub_opts.tmva_set:
             _opt_command += f"-t {self.sub_opts.tmva_set} "
         if self.sub_opts.no_split:
@@ -300,7 +302,9 @@ class dampe_helper():
         parser.add_argument("-m", "--mc", dest='mc',
                             default=False, action='store_true', help='MC event collector')
         parser.add_argument("-b", "--behaviour", type=str,
-                            dest='behaviour', help='BDT variable regularizer facility')
+                            dest='behaviour', help='BDT variables regularizer facility')
+        parser.add_argument("-g", "--gaussianize", dest='gaussianize', default=False,
+                            action='store_true', help='BDT variables gaussianizer facility')
         parser.add_argument("-t", "--tmva_set", type=str,
                             dest='tmva_set', help='Create TMVA Test/Training sets - s(signal)/b(background)')
         parser.add_argument("-n", "--no_split", type=str,
