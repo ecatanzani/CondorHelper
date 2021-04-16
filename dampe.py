@@ -228,10 +228,12 @@ class dampe_helper():
 
     def kompressor_task(self, outScript, dataListPath, cDir):
         tmpOutDir = cDir + str("/outFiles")
+        ldpath = self.sub_opts.executable[:self.sub_opts.executable.rfind('Kompressor/')+11] + "dylib"
         outScript.write("#!/usr/bin/env bash\n")
         outScript.write("source /opt/rh/devtoolset-7/enable\n")
         outScript.write("source /storage/gpfs_data/dampe/users/ecatanzani/deps/root-6.22/bin/thisroot.sh\n")
-        outScript.write('mkdir {}\n'.format(tmpOutDir))
+        outScript.write(f"export LD_LIBRARY_PATH={ldpath}:$LD_LIBRARY_PATH\n")
+        outScript.write(f"mkdir {tmpOutDir}\n")
         
         _opt_command = ""
         if self.sub_opts.mc:
