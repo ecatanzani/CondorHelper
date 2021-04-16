@@ -321,7 +321,7 @@ class dampe_helper():
         args = parser.parse_args(sys.argv[2:])
         self.sub_opts = args
         
-        self.parse_input_list()
+        self.parse_input_list(start_idx=0)
         self.create_condor_files(kompressor=True)
         self.submit_jobs()
 
