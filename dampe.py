@@ -331,6 +331,32 @@ class dampe_helper():
         self.create_condor_files(kompressor=True)
         self.submit_jobs()
 
+    def kompressor_gaus(self):
+        parser = ArgumentParser(
+            description='DAMPE Kompressor facility')
+        parser.add_argument("-l", "--list", type=str,
+                            dest='list', help='Input DATA/MC list')
+        parser.add_argument("-o", "--output", type=str,
+                            dest='output', help='HTC output directory')
+        parser.add_argument("-m", "--mc", dest='mc',
+                            default=False, action='store_true', help='MC event collector')
+        parser.add_argument("-f", "--file", type=int, dest='file',
+                            const=10, nargs='?', help='files to process in job')
+        parser.add_argument("-x", "--executable", type=str,
+                            dest='executable', help='Analysis script')
+        parser.add_argument("-v", "--verbose", dest='verbose', default=False,
+                            action='store_true', help='run in high verbosity mode')
+        parser.add_argument("-r", "--recreate", dest='recreate', default=False,
+                            action='store_true', help='recreate output dirs if present')
+
+        args = parser.parse_args(sys.argv[2:])
+        self.sub_opts = args
+        
+        self.parse_input_list(start_idx=0)
+        self.create_condor_files(kompressor=True)
+        self.submit_jobs()
+
+
     def kompressor_add(self):
         parser = ArgumentParser(
             description='Add Kompressor out files')
