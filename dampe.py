@@ -236,6 +236,8 @@ class dampe_helper():
         outScript.write(f"mkdir {tmpOutDir}\n")
         
         _opt_command = ""
+        if self.sub_opts.config:
+            _opt_command += f"-w {self.sub_opts.config} "
         if self.sub_opts.mc:
             _opt_command += "-m "
         if self.sub_opts.behaviour:
@@ -249,7 +251,7 @@ class dampe_helper():
         if self.sub_opts.no_split:
             _opt_command += f"-n {self.sub_opts.no_split}"
 
-        _command = f"{self.sub_opts.executable} -w {self.sub_opts.config} -i {dataListPath} -d {tmpOutDir} -v {_opt_command}"
+        _command = f"{self.sub_opts.executable} -i {dataListPath} -d {tmpOutDir} -v {_opt_command}"
 
         outScript.write(_command)
         
