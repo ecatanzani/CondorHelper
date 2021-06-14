@@ -455,37 +455,33 @@ class dampe_helper():
                 expected_condor_outDir = full_dir_path + "/outFiles"
                 # Check if 'outFiles' dir exists
                 if os.path.isdir(expected_condor_outDir):
-                    _list_dir = os.listdir(expected_condor_outDir)
-                    tmp_acc_full_path = ""
-                    for file in _list_dir:
-                        if file.endswith(".root"):
-                            tmp_acc_full_path = expected_condor_outDir + "/" + file
-                            break
-                    # Check if output ROOT file exists
-                    if os.path.isfile(tmp_acc_full_path):
-                        # Check if output ROOT file is redable
-                        if self.TestROOTFile(tmp_acc_full_path):
-                            tmp_acc_file = TFile.Open(
-                                tmp_acc_full_path, "READ")
+                    _list_dir = [expected_condor_outDir + "/" + file for file in os.listdir(expected_condor_outDir) if file.endswoth('.root')]
+                    for tmp_acc_full_path in _list_dir:
+                        # Check if output ROOT file exists
+                        if os.path.isfile(tmp_acc_full_path):
                             # Check if output ROOT file is redable
-                            if tmp_acc_file.IsOpen():
-                                # Check if output ROOT file has keys
-                                outKeys = tmp_acc_file.GetNkeys()
-                                if outKeys:
-                                    self.data_dirs.append(full_dir_path)
-                                    self.data_files.append(tmp_acc_full_path)
-                                else:
-                                    # output ROOT file has been open but has not keys
-                                    self.skipped_dirs.append(full_dir_path)
-                                    self.skipped_file_noKeys += 1
+                            if self.TestROOTFile(tmp_acc_full_path):
+                                tmp_acc_file = TFile.Open(
+                                    tmp_acc_full_path, "READ")
+                                # Check if output ROOT file is redable
+                                if tmp_acc_file.IsOpen():
+                                    # Check if output ROOT file has keys
+                                    outKeys = tmp_acc_file.GetNkeys()
+                                    if outKeys:
+                                        self.data_dirs.append(full_dir_path)
+                                        self.data_files.append(tmp_acc_full_path)
+                                    else:
+                                        # output ROOT file has been open but has not keys
+                                        self.skipped_dirs.append(full_dir_path)
+                                        self.skipped_file_noKeys += 1
+                            else:
+                                # output ROOT file has not been opened correctly
+                                self.skipped_dirs.append(full_dir_path)
+                                self.skipped_file_notReadable += 1
                         else:
-                            # output ROOT file has not been opened correctly
+                            # output ROOT file does not exist
                             self.skipped_dirs.append(full_dir_path)
-                            self.skipped_file_notReadable += 1
-                    else:
-                        # output ROOT file does not exist
-                        self.skipped_dirs.append(full_dir_path)
-                        self.skipped_file_notROOTfile += 1
+                            self.skipped_file_notROOTfile += 1
                 else:
                     # 'outFiles' dir does not exists
                     self.skipped_dirs.append(full_dir_path)
@@ -548,6 +544,8 @@ class dampe_helper():
                             action='store_true', help='Remove ROOT files with no keys')
         parser.add_argument("-l", "--list", dest='list', default=False,
                             action='store_true', help='Produce file list')
+        parser.add_argument("-s", "--split", dest='split', default=False,
+                            action='store_true', help='Split file list by energy bin')
         parser.add_argument("-v", "--verbose", dest='verbose', default=False,
                             action='store_true', help='run in high verbosity mode')
         args = parser.parse_args(sys.argv[2:])
@@ -582,11 +580,25 @@ class dampe_helper():
                 self.resubmit_condor_jobs(
                     self.skipped_dirs, self.sub_opts.verbose)
         if self.sub_opts.list:
-            _list_path = self.sub_opts.input[self.sub_opts.input.rfind(
-                '/')+1:] + ".txt"
-            with open(_list_path, "w") as _final_list:
-                for elm in self.data_files:
-                    _final_list.write(elm + "\n")
+            if self.sub_opts.split:
+
+                _single_job = [file for file in self.data_files if "job_0" in file]
+                _single_job.sort()
+                energy_nbins = int(_single_job[-1][_single_job[-1].rfind('_'):_single_job[-1].rfind('.root')])
+
+                for bin_idx in range(energy_nbins):
+                    tmp_bin_files = [file for file in self.data_files if f"energybin_{bin_idx}.root" in file]
+                    _list_path = self.sub_opts.input[self.sub_opts.input.rfind('/')+1:] + f"_energybin_{bin_idx}.txt"
+                    with open(_list_path, "w") as _final_list:
+                        for elm in tmp_bin_files:
+                            _final_list.write(elm + "\n")
+
+            else:
+                _list_path = self.sub_opts.input[self.sub_opts.input.rfind(
+                    '/')+1:] + ".txt"
+                with open(_list_path, "w") as _final_list:
+                    for elm in self.data_files:
+                        _final_list.write(elm + "\n")
 
 
 if __name__ == '__main__':
