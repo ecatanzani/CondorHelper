@@ -456,6 +456,8 @@ class dampe_helper():
                 # Check if 'outFiles' dir exists
                 if os.path.isdir(expected_condor_outDir):
                     _list_dir = [expected_condor_outDir + "/" + file for file in os.listdir(expected_condor_outDir) if file.endswith('.root')]
+                    skipped_dir = False
+                    good_file_in_dir = True
                     for tmp_acc_full_path in _list_dir:
                         # Check if output ROOT file exists
                         if os.path.isfile(tmp_acc_full_path):
@@ -468,19 +470,27 @@ class dampe_helper():
                                     # Check if output ROOT file has keys
                                     outKeys = tmp_acc_file.GetNkeys()
                                     if outKeys:
-                                        self.data_dirs.append(full_dir_path)
+                                        if good_file_in_dir:
+                                            self.data_dirs.append(full_dir_path)
+                                            good_file_in_dir = False
                                         self.data_files.append(tmp_acc_full_path)
                                     else:
                                         # output ROOT file has been open but has not keys
-                                        self.skipped_dirs.append(full_dir_path)
+                                        if not skipped_dir:
+                                            self.skipped_dirs.append(full_dir_path)
+                                            skipped_dir = True
                                         self.skipped_file_noKeys += 1
                             else:
                                 # output ROOT file has not been opened correctly
-                                self.skipped_dirs.append(full_dir_path)
+                                if not skipped_dir:
+                                    self.skipped_dirs.append(full_dir_path)
+                                    skipped_dir = True
                                 self.skipped_file_notReadable += 1
                         else:
                             # output ROOT file does not exist
-                            self.skipped_dirs.append(full_dir_path)
+                            if not skipped_dir:
+                                self.skipped_dirs.append(full_dir_path)
+                                skipped_dir = True
                             self.skipped_file_notROOTfile += 1
                 else:
                     # 'outFiles' dir does not exists
@@ -581,18 +591,15 @@ class dampe_helper():
                     self.skipped_dirs, self.sub_opts.verbose)
         if self.sub_opts.list:
             if self.sub_opts.split:
-
-                _single_job = [file for file in self.data_files if "job_0" in file]
+                _single_job = [int(file[file.rfind('_')+1:file.rfind('.')]) for file in self.data_files if "job_0" in file]
                 _single_job.sort()
-                energy_nbins = int(_single_job[-1][_single_job[-1].rfind('_'):_single_job[-1].rfind('.root')])
-
-                for bin_idx in range(energy_nbins):
+                energy_nbins = _single_job[-1]
+                for bin_idx in range(1, energy_nbins+1):
                     tmp_bin_files = [file for file in self.data_files if f"energybin_{bin_idx}.root" in file]
                     _list_path = self.sub_opts.input[self.sub_opts.input.rfind('/')+1:] + f"_energybin_{bin_idx}.txt"
                     with open(_list_path, "w") as _final_list:
                         for elm in tmp_bin_files:
                             _final_list.write(elm + "\n")
-
             else:
                 _list_path = self.sub_opts.input[self.sub_opts.input.rfind(
                     '/')+1:] + ".txt"
