@@ -455,7 +455,7 @@ class dampe_helper():
                 expected_condor_outDir = full_dir_path + "/outFiles"
                 # Check if 'outFiles' dir exists
                 if os.path.isdir(expected_condor_outDir):
-                    _list_dir = [expected_condor_outDir + "/" + file for file in os.listdir(expected_condor_outDir) if file.endswoth('.root')]
+                    _list_dir = [expected_condor_outDir + "/" + file for file in os.listdir(expected_condor_outDir) if file.endswith('.root')]
                     for tmp_acc_full_path in _list_dir:
                         # Check if output ROOT file exists
                         if os.path.isfile(tmp_acc_full_path):
