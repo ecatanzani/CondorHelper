@@ -150,56 +150,66 @@ class dampe_helper():
                     print('Created output list: {}'.format(list_path))
         return (good_dir, tmp_dir_name)
 
-    def create_condor_files(self, kompressor=False, mt=False):
-        for cDir in self.condorDirs:
+    def checkargs(self, collector, kompressor, split):
+        bool_list = [collector, kompressor, split]
+        if bool_list.count(True) == 1:
+            return True
+        else:
+            return False
 
-            # Find out paths
-            outputPath = cDir + "/" + "output.log"
-            logPath = cDir + "/" + "output.clog"
-            errPath = cDir + "/" + "output.err"
-            bashScriptPath = cDir + str("/script.sh")
+    def create_condor_files(self, collector=True, kompressor=False, split=False, mt=False):
+        if self.checkargs(collector, kompressor, split):
+            for cDir in self.condorDirs:
 
-            # Writing sub file
-            subFilePath = cDir + str("/crawler.sub")
-            try:
-                with open(subFilePath, 'w') as outSub:
-                    outSub.write("universe = vanilla\n")
-                    if kompressor:
-                        if mt:
-                            outSub.write("request_cpus = 4\n")
-                            outSub.write("request_memory = 4096\n")
-                    outSub.write('executable = {}\n'.format(bashScriptPath))
-                    outSub.write('output = {}\n'.format(outputPath))
-                    outSub.write('error = {}\n'.format(errPath))
-                    outSub.write('log = {}\n'.format(logPath))
-                    outSub.write("ShouldTransferFiles = YES\n")
-                    outSub.write("WhenToTransferOutput = ON_EXIT\n")
-                    outSub.write("queue 1")
-            except OSError:
-                print('ERROR creating HTCondor sub file in: {}'.format(cDir))
-                raise
-            else:
-                if self.sub_opts.verbose:
-                    print('HTCondor sub file created in: {}'.format(cDir))
+                # Find out paths
+                outputPath = cDir + "/" + "output.log"
+                logPath = cDir + "/" + "output.clog"
+                errPath = cDir + "/" + "output.err"
+                bashScriptPath = cDir + str("/script.sh")
 
-            # Build executable bash script
-            dataListPath = cDir + str("/dataList.txt")
-            try:
-                with open(bashScriptPath, "w") as outScript:
-                    if not kompressor: 
-                        self.collector_task(outScript, dataListPath, cDir)
-                    else:
-                        self.kompressor_task(outScript, dataListPath, cDir)
-            except OSError:
-                print('ERROR creating HTCondor bash script file in: {}'.format(cDir))
-                raise
-            else:
-                if self.sub_opts.verbose:
-                    print('HTCondor bash script file created in: {}'.format(cDir))
+                # Writing sub file
+                subFilePath = cDir + str("/crawler.sub")
+                try:
+                    with open(subFilePath, 'w') as outSub:
+                        outSub.write("universe = vanilla\n")
+                        if kompressor or split: # MT option only works with kompressor software. Collector works in single core only
+                            if mt: 
+                                outSub.write("request_cpus = 4\n")
+                                outSub.write("request_memory = 4096\n")
+                        outSub.write('executable = {}\n'.format(bashScriptPath))
+                        outSub.write('output = {}\n'.format(outputPath))
+                        outSub.write('error = {}\n'.format(errPath))
+                        outSub.write('log = {}\n'.format(logPath))
+                        outSub.write("ShouldTransferFiles = YES\n")
+                        outSub.write("WhenToTransferOutput = ON_EXIT\n")
+                        outSub.write("queue 1")
+                except OSError:
+                    print('ERROR creating HTCondor sub file in: {}'.format(cDir))
+                    raise
+                else:
+                    if self.sub_opts.verbose:
+                        print('HTCondor sub file created in: {}'.format(cDir))
 
-            # Make bash script executable
-            subprocess.run('chmod +x {}'.format(bashScriptPath),
-                           shell=True, check=True)
+                # Build executable bash script
+                dataListPath = cDir + str("/dataList.txt")
+                try:
+                    with open(bashScriptPath, "w") as outScript:
+                        if collector: 
+                            self.collector_task(outScript, dataListPath, cDir)
+                        if kompressor:
+                            self.kompressor_task(outScript, dataListPath, cDir)
+                        if split:
+                            self.split_task(outScript, dataListPath, cDir)
+                except OSError:
+                    print('ERROR creating HTCondor bash script file in: {}'.format(cDir))
+                    raise
+                else:
+                    if self.sub_opts.verbose:
+                        print('HTCondor bash script file created in: {}'.format(cDir))
+
+                # Make bash script executable
+                subprocess.run('chmod +x {}'.format(bashScriptPath),
+                            shell=True, check=True)
 
     def submit_jobs(self):
         for folder in self.condorDirs:
@@ -254,7 +264,26 @@ class dampe_helper():
         _command = f"{self.sub_opts.executable} -i {dataListPath} -d {tmpOutDir} -v {_opt_command}"
 
         outScript.write(_command)
-        
+    
+    def split_task(self, outScript, dataListPath, cDir):
+        tmpOutDir = cDir + str("/outFiles")
+        ldpath = self.sub_opts.executable[:self.sub_opts.executable.rfind('Split/')+6] + "dylib"
+        outScript.write("#!/usr/bin/env bash\n")
+        outScript.write("source /opt/rh/devtoolset-7/enable\n")
+        outScript.write("source /storage/gpfs_data/dampe/users/ecatanzani/deps/root-6.22/bin/thisroot.sh\n")
+        outScript.write(f"export LD_LIBRARY_PATH={ldpath}:$LD_LIBRARY_PATH\n")
+        outScript.write(f"mkdir {tmpOutDir}\n")
+
+        _opt_command = ""
+        if self.sub_opts.config:
+            _opt_command += f"-w {self.sub_opts.config} "
+        if self.sub_opts.mc:
+            _opt_command += "-m "
+
+        _command = f"{self.sub_opts.executable} -i {dataListPath} -d {tmpOutDir} -v {_opt_command}"
+
+        outScript.write(_command)
+
     def collector(self):
         parser = ArgumentParser(
             description='DAMPE all-electron collector facility')
@@ -293,7 +322,7 @@ class dampe_helper():
                 jobs_folder = [ file for file in os.listdir(self.sub_opts.output) if file.startswith('job_') ]
                 start_idx = max([ int(file[file.rfind('_')+1:]) for file in jobs_folder ])+1
             self.parse_input_list(start_idx)
-        self.create_condor_files()
+        self.create_condor_files(collector=True, kompressor=False, split=False, mt=False)
         self.submit_jobs()
 
     def kompressor(self):
@@ -330,7 +359,7 @@ class dampe_helper():
         self.sub_opts = args
         
         self.parse_input_list(start_idx=0)
-        self.create_condor_files(kompressor=True)
+        self.create_condor_files(collector=False, kompressor=True, split=False, mt=False)
         self.submit_jobs()
 
     def kompressor_add(self):
@@ -373,6 +402,33 @@ class dampe_helper():
                 print(_cmd)
             _cmd = f"hadd {_out_full_name}{_file_list}"
             subprocess.run(_cmd, shell=True, check=True)
+
+    def split(self):
+        parser = ArgumentParser(
+            description='DAMPE Split facility')
+        parser.add_argument("-l", "--list", type=str,
+                            dest='list', help='Input DATA/MC list')
+        parser.add_argument("-c", "--config", type=str,
+                            dest='config', help='Software Config Directory')
+        parser.add_argument("-o", "--output", type=str,
+                            dest='output', help='HTC output directory')
+        parser.add_argument("-m", "--mc", dest='mc',
+                            default=False, action='store_true', help='MC event collector')
+        parser.add_argument("-f", "--file", type=int, dest='file',
+                            const=10, nargs='?', help='files to process in job')
+        parser.add_argument("-x", "--executable", type=str,
+                            dest='executable', help='Analysis script')
+        parser.add_argument("-v", "--verbose", dest='verbose', default=False,
+                            action='store_true', help='run in high verbosity mode')
+        parser.add_argument("-r", "--recreate", dest='recreate', default=False,
+                            action='store_true', help='recreate output dirs if present')
+
+        args = parser.parse_args(sys.argv[2:])
+        self.sub_opts = args
+
+        self.parse_input_list(start_idx=0)
+        self.create_condor_files(collector=False, kompressor=False, split=True, mt=False)
+        self.submit_jobs()
 
     def TestROOTFile(self, path):
         from ROOT import TFile
