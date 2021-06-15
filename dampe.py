@@ -42,7 +42,7 @@ class dampe_helper():
             exit(1)
         getattr(self, args.command)()
 
-    def parse_input_list(self, start_idx):
+    def parse_input_list(self, start_idx, recursive=False):
         out_dir = self.sub_opts.output
         with open(self.sub_opts.list, 'r') as inputList:
             list_idx = start_idx
@@ -53,14 +53,14 @@ class dampe_helper():
                     if len(data_list) == self.sub_opts.file:
                         _tmp_out_dir = out_dir + "/" + "job_" + str(list_idx)
                         _dir_data = self.write_list_to_file(
-                            data_list, _tmp_out_dir)
+                            data_list, _tmp_out_dir, recursive)
                         if _dir_data[0]:
                             self.condorDirs.append(_dir_data[1])
                             list_idx += 1
                         data_list.clear()
             if data_list:
                 _tmp_out_dir = out_dir + "/" + "job_" + str(list_idx)
-                _dir_data = self.write_list_to_file(data_list, _tmp_out_dir)
+                _dir_data = self.write_list_to_file(data_list, _tmp_out_dir, recursive)
                 if _dir_data[0]:
                     self.condorDirs.append(_dir_data[1])
                     list_idx += 1
@@ -107,7 +107,7 @@ class dampe_helper():
                         list_idx += 1
                     data_list.clear()
 
-    def write_list_to_file(self, data_list, tmp_dir_name):
+    def write_list_to_file(self, data_list, tmp_dir_name, recursive=False):
         good_dir = False
         if not os.path.isdir(tmp_dir_name):
             try:
@@ -137,6 +137,15 @@ class dampe_helper():
             list_path = tmp_dir_name + "/dataList.txt"
             try:
                 with open(list_path, 'w') as out_tmp_list:
+                    if recursive:
+                        file_list = []
+                        for sub_list in data_list:
+                            with open(sub_list, "r") as _file:
+                                lines = _file.read().splitlines()
+                                lines.sort()
+                                file_list += lines
+                        data_list = file_list
+                    
                     for idx, file in enumerate(data_list):
                         if idx == 0:
                             out_tmp_list.write(file)
@@ -260,6 +269,8 @@ class dampe_helper():
             _opt_command += f"-t {self.sub_opts.tmva_set} "
         if self.sub_opts.no_split:
             _opt_command += f"-n {self.sub_opts.no_split}"
+        if self.sub_opts.likelihood:
+            _opt_command += "-l "    
 
         _command = f"{self.sub_opts.executable} -i {dataListPath} -d {tmpOutDir} -v {_opt_command}"
 
@@ -346,6 +357,10 @@ class dampe_helper():
                             dest='tmva_set', help='Create TMVA Test/Training sets - s(signal)/b(background)')
         parser.add_argument("-n", "--no_split", type=str,
                             dest='no_split', help='Create a single Test/Training TMVA set')
+
+        parser.add_argument("-k", "--likelihood", dest='likelihood', default=False,
+                            action='store_true', help='likelihood analysis facility')
+
         parser.add_argument("-f", "--file", type=int, dest='file',
                             const=10, nargs='?', help='files to process in job')
         parser.add_argument("-x", "--executable", type=str,
@@ -358,7 +373,9 @@ class dampe_helper():
         args = parser.parse_args(sys.argv[2:])
         self.sub_opts = args
         
-        self.parse_input_list(start_idx=0)
+        if self.sub_opts.likelihood:
+            self.sub_opts.file = 1
+        self.parse_input_list(start_idx=0, recursive=True)
         self.create_condor_files(collector=False, kompressor=True, split=False, mt=False)
         self.submit_jobs()
 
@@ -594,12 +611,19 @@ class dampe_helper():
                 _single_job = [int(file[file.rfind('_')+1:file.rfind('.')]) for file in self.data_files if "job_0" in file]
                 _single_job.sort()
                 energy_nbins = _single_job[-1]
+                _single_bin_lists = []
                 for bin_idx in range(1, energy_nbins+1):
                     tmp_bin_files = [file for file in self.data_files if f"energybin_{bin_idx}.root" in file]
                     _list_path = self.sub_opts.input[self.sub_opts.input.rfind('/')+1:] + f"_energybin_{bin_idx}.txt"
+                    _single_bin_lists.append(f"{os.getcwd()}/{_list_path}")
                     with open(_list_path, "w") as _final_list:
                         for elm in tmp_bin_files:
                             _final_list.write(elm + "\n")
+                _list_path = self.sub_opts.input[self.sub_opts.input.rfind('/')+1:] + "_energybin_all_lists.txt"
+                with open(_list_path, "w") as _final_list:
+                    for elm in _single_bin_lists:
+                         _final_list.write(elm + "\n")
+                
             else:
                 _list_path = self.sub_opts.input[self.sub_opts.input.rfind(
                     '/')+1:] + ".txt"
