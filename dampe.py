@@ -373,9 +373,11 @@ class dampe_helper():
         args = parser.parse_args(sys.argv[2:])
         self.sub_opts = args
         
+        _recursive = False
         if self.sub_opts.likelihood:
             self.sub_opts.file = 1
-        self.parse_input_list(start_idx=0, recursive=True)
+            _recursive = True
+        self.parse_input_list(start_idx=0, recursive=_recursive)
         self.create_condor_files(collector=False, kompressor=True, split=False, mt=False)
         self.submit_jobs()
 
