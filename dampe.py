@@ -159,15 +159,15 @@ class dampe_helper():
                     print('Created output list: {}'.format(list_path))
         return (good_dir, tmp_dir_name)
 
-    def checkargs(self, collector, kompressor, split):
-        bool_list = [collector, kompressor, split]
+    def checkargs(self, collector, kompressor, aladin, split):
+        bool_list = [collector, kompressor, aladin, split]
         if bool_list.count(True) == 1:
             return True
         else:
             return False
 
-    def create_condor_files(self, collector=True, kompressor=False, split=False, mt=False):
-        if self.checkargs(collector, kompressor, split):
+    def create_condor_files(self, collector, kompressor, aladin, split, mt):
+        if self.checkargs(collector, kompressor, aladin, split):
             for cDir in self.condorDirs:
 
                 # Find out paths
@@ -181,7 +181,7 @@ class dampe_helper():
                 try:
                     with open(subFilePath, 'w') as outSub:
                         outSub.write("universe = vanilla\n")
-                        if kompressor or split: # MT option only works with kompressor software. Collector works in single core only
+                        if kompressor or aladin or split: # MT option only works with kompressor software. Collector works in single core only
                             if mt: 
                                 outSub.write("request_cpus = 4\n")
                                 outSub.write("request_memory = 4096\n")
@@ -207,6 +207,8 @@ class dampe_helper():
                             self.collector_task(outScript, dataListPath, cDir)
                         if kompressor:
                             self.kompressor_task(outScript, dataListPath, cDir)
+                        if aladin:
+                            self.aladin_task(outScript, dataListPath, cDir)
                         if split:
                             self.split_task(outScript, dataListPath, cDir)
                 except OSError:
@@ -275,6 +277,31 @@ class dampe_helper():
         _command = f"{self.sub_opts.executable} -i {dataListPath} -d {tmpOutDir} -v {_opt_command}"
 
         outScript.write(_command)
+
+    def aladin_task(self, outScript, dataListPath, cDir):
+        tmpOutDir = cDir + str("/outFiles")
+        ldpath = self.sub_opts.executable[:self.sub_opts.executable.rfind('Aladin/')+7] + "dylib"
+        outScript.write("#!/usr/bin/env bash\n")
+        outScript.write("source /opt/rh/devtoolset-7/enable\n")
+        outScript.write("source /storage/gpfs_data/dampe/users/ecatanzani/deps/root-6.22/bin/thisroot.sh\n")
+        outScript.write(f"export LD_LIBRARY_PATH={ldpath}:$LD_LIBRARY_PATH\n")
+        outScript.write(f"mkdir {tmpOutDir}\n")
+        
+        _opt_command = ""
+        if self.sub_opts.config:
+            _opt_command += f"-w {self.sub_opts.config} "
+        if self.sub_opts.mc:
+            _opt_command += "-m "
+        if self.sub_opts.behaviour:
+            _opt_command += f"-r {self.sub_opts.behaviour} "
+        if self.sub_opts.gaussianize:
+            _opt_command += "-g "
+        if self.sub_opts.likelihood:
+            _opt_command += "-l "    
+
+        _command = f"{self.sub_opts.executable} -i {dataListPath} -d {tmpOutDir} -v {_opt_command}"
+
+        outScript.write(_command)
     
     def split_task(self, outScript, dataListPath, cDir):
         tmpOutDir = cDir + str("/outFiles")
@@ -333,7 +360,7 @@ class dampe_helper():
                 jobs_folder = [ file for file in os.listdir(self.sub_opts.output) if file.startswith('job_') ]
                 start_idx = max([ int(file[file.rfind('_')+1:]) for file in jobs_folder ])+1
             self.parse_input_list(start_idx)
-        self.create_condor_files(collector=True, kompressor=False, split=False, mt=False)
+        self.create_condor_files(collector=True, kompressor=False, aladin=False, split=False, mt=False)
         self.submit_jobs()
 
     def kompressor(self):
@@ -378,9 +405,9 @@ class dampe_helper():
             self.sub_opts.file = 1
             _recursive = True
         self.parse_input_list(start_idx=0, recursive=_recursive)
-        self.create_condor_files(collector=False, kompressor=True, split=False, mt=False)
+        self.create_condor_files(collector=False, kompressor=True, aladin=False, split=False, mt=False)
         self.submit_jobs()
-
+    
     def kompressor_add(self):
         parser = ArgumentParser(
             description='Add Kompressor out files')
@@ -422,6 +449,44 @@ class dampe_helper():
             _cmd = f"hadd {_out_full_name}{_file_list}"
             subprocess.run(_cmd, shell=True, check=True)
 
+    def aladin(self):
+        parser = ArgumentParser(
+            description='DAMPE Aladin facility')
+        parser.add_argument("-l", "--list", type=str,
+                            dest='list', help='Input DATA/MC list')
+        parser.add_argument("-c", "--config", type=str,
+                            dest='config', help='Software Config Directory')
+        parser.add_argument("-o", "--output", type=str,
+                            dest='output', help='HTC output directory')
+        parser.add_argument("-m", "--mc", dest='mc',
+                            default=False, action='store_true', help='MC event collector')
+        parser.add_argument("-b", "--behaviour", type=str,
+                            dest='behaviour', help='BDT variables regularizer facility')
+        parser.add_argument("-g", "--gaussianize", dest='gaussianize', default=False,
+                            action='store_true', help='BDT variables gaussianizer facility')
+        parser.add_argument("-k", "--likelihood", dest='likelihood', default=False,
+                            action='store_true', help='likelihood analysis facility')
+
+        parser.add_argument("-f", "--file", type=int, dest='file',
+                            const=10, nargs='?', help='files to process in job')
+        parser.add_argument("-x", "--executable", type=str,
+                            dest='executable', help='Analysis script')
+        parser.add_argument("-v", "--verbose", dest='verbose', default=False,
+                            action='store_true', help='run in high verbosity mode')
+        parser.add_argument("-r", "--recreate", dest='recreate', default=False,
+                            action='store_true', help='recreate output dirs if present')
+
+        args = parser.parse_args(sys.argv[2:])
+        self.sub_opts = args
+        
+        _recursive = False
+        if self.sub_opts.likelihood:
+            self.sub_opts.file = 1
+            _recursive = True
+        self.parse_input_list(start_idx=0, recursive=_recursive)
+        self.create_condor_files(collector=False, kompressor=False, aladin=True, split=False, mt=False)
+        self.submit_jobs()
+
     def split(self):
         parser = ArgumentParser(
             description='DAMPE Split facility')
@@ -446,7 +511,7 @@ class dampe_helper():
         self.sub_opts = args
 
         self.parse_input_list(start_idx=0)
-        self.create_condor_files(collector=False, kompressor=False, split=True, mt=False)
+        self.create_condor_files(collector=False, kompressor=False, aladin=False, split=True, mt=False)
         self.submit_jobs()
 
     def TestROOTFile(self, path):
