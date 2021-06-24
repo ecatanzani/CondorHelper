@@ -297,7 +297,9 @@ class dampe_helper():
         if self.sub_opts.gaussianize:
             _opt_command += "-g "
         if self.sub_opts.likelihood:
-            _opt_command += "-l "    
+            _opt_command += "-l "
+        if self.sub_opts.fit:
+            _opt_command += "-f "    
 
         _command = f"{self.sub_opts.executable} -i {dataListPath} -d {tmpOutDir} -v {_opt_command}"
 
@@ -466,6 +468,8 @@ class dampe_helper():
                             action='store_true', help='BDT variables gaussianizer facility')
         parser.add_argument("-k", "--likelihood", dest='likelihood', default=False,
                             action='store_true', help='likelihood analysis facility')
+        parser.add_argument("-t", "--fit", dest='fit', default=False,
+                            action='store_true', help='fit analysis facility')
 
         parser.add_argument("-f", "--file", type=int, dest='file',
                             const=10, nargs='?', help='files to process in job')
