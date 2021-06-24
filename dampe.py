@@ -484,7 +484,7 @@ class dampe_helper():
         self.sub_opts = args
         
         _recursive = False
-        if self.sub_opts.likelihood:
+        if self.sub_opts.likelihood or self.sub_opts.fit:
             self.sub_opts.file = 1
             _recursive = True
         self.parse_input_list(start_idx=0, recursive=_recursive)
