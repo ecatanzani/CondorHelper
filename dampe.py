@@ -66,6 +66,110 @@ class dampe_helper():
                     list_idx += 1
                 data_list.clear()
 
+    def TestROOTFile(self, path):
+        from ROOT import TFile
+        _tmp_file = TFile(path)
+        if _tmp_file and not _tmp_file.IsOpen():
+            return False
+        elif _tmp_file and _tmp_file.IsOpen() and _tmp_file.IsZombie():
+            _tmp_file.Close()
+            return False
+        elif _tmp_file and _tmp_file.IsOpen() and _tmp_file.TestBit(TFile.kRecovered):
+            _tmp_file.Close()
+            return False
+        else:
+            _tmp_file.Close()
+            return True
+
+    def getListOfFiles(self, condor_wd):
+        from ROOT import TFile
+
+        # Starting loop on output condor dirs
+        for tmp_dir in os.listdir(condor_wd):
+            if tmp_dir.startswith('job_'):
+                full_dir_path = condor_wd + "/" + tmp_dir
+                expected_condor_outDir = full_dir_path + "/outFiles"
+                # Check if 'outFiles' dir exists
+                if os.path.isdir(expected_condor_outDir):
+                    _list_dir = [expected_condor_outDir + "/" + file for file in os.listdir(expected_condor_outDir) if file.endswith('.root')]
+                    skipped_dir = False
+                    good_file_in_dir = True
+                    for tmp_acc_full_path in _list_dir:
+                        # Check if output ROOT file exists
+                        if os.path.isfile(tmp_acc_full_path):
+                            # Check if output ROOT file is redable
+                            if self.TestROOTFile(tmp_acc_full_path):
+                                tmp_acc_file = TFile.Open(
+                                    tmp_acc_full_path, "READ")
+                                # Check if output ROOT file is redable
+                                if tmp_acc_file.IsOpen():
+                                    # Check if output ROOT file has keys
+                                    outKeys = tmp_acc_file.GetNkeys()
+                                    if outKeys:
+                                        if good_file_in_dir:
+                                            self.data_dirs.append(full_dir_path)
+                                            good_file_in_dir = False
+                                        self.data_files.append(tmp_acc_full_path)
+                                    else:
+                                        # output ROOT file has been open but has not keys
+                                        if not skipped_dir:
+                                            self.skipped_dirs.append(full_dir_path)
+                                            skipped_dir = True
+                                        self.skipped_file_noKeys += 1
+                            else:
+                                # output ROOT file has not been opened correctly
+                                if not skipped_dir:
+                                    self.skipped_dirs.append(full_dir_path)
+                                    skipped_dir = True
+                                self.skipped_file_notReadable += 1
+                        else:
+                            # output ROOT file does not exist
+                            if not skipped_dir:
+                                self.skipped_dirs.append(full_dir_path)
+                                skipped_dir = True
+                            self.skipped_file_notROOTfile += 1
+                else:
+                    # 'outFiles' dir does not exists
+                    self.skipped_dirs.append(full_dir_path)
+                    self.skipped_file_notFinalDir += 1
+
+    def cleanListOfFiles(self):
+        for file in self.data_files:
+            if self.sub_opts.filter not in file:
+                self.data_files.remove(file)
+
+    def orderListOfFiles(self):
+        ordered_list = []
+        for bin_idx in range(0,len(self.data_files)):
+            for file in self.data_files:
+                if f"job_{bin_idx}/" in file:
+                    ordered_list.append(file)
+        self.data_files = ordered_list
+
+    def clean_condor_dir(self, dir):
+        os.chdir(dir)
+        outCondor = [filename for filename in os.listdir(
+            '.') if filename.startswith("out")]
+
+        # Clean the job dir
+        if outCondor:
+            for elm in outCondor:
+                if os.path.isdir(elm):
+                    shutil.rmtree(elm)
+                if os.path.isfile(elm):
+                    os.remove(elm)
+
+    def resubmit_condor_jobs(self, skipped_dirs, verbose):
+        for dir in skipped_dirs:
+            self.clean_condor_dir(dir)
+
+            # Submit HTCondor job
+            if verbose:
+                print('Resubmitting job from folder: {}'.format(dir))
+
+            subprocess.run(
+                "condor_submit -name sn-01.cr.cnaf.infn.it -spool crawler.sub", shell=True, check=True)
+                
     def extract_timing_info(self):
         with open(self.sub_opts.list, 'r') as inputList:
             for filename in inputList:
@@ -409,47 +513,6 @@ class dampe_helper():
         self.parse_input_list(start_idx=0, recursive=_recursive)
         self.create_condor_files(collector=False, kompressor=True, aladin=False, split=False, mt=False)
         self.submit_jobs()
-    
-    def integral(self):
-        parser = ArgumentParser(
-            description='Add Kompressor out files')
-        parser.add_argument("-i", "--input", type=str,
-                            dest='input', help='Input condor jobs WD')
-        parser.add_argument("-o", "--output", type=str,
-                            dest='output', help='output ROOT file')
-        parser.add_argument("-v", "--verbose", dest='verbose', default=False,
-                            action='store_true', help='run in high verbosity mode')
-        
-        args = parser.parse_args(sys.argv[2:])
-        self.sub_opts = args
-        
-        if self.sub_opts.verbose:
-            print("Scanning original data directory...")
-        self.getListOfFiles(self.sub_opts.input)
-        if self.sub_opts.verbose:
-            print(f"Going to add {len(self.data_files)} ROOT files...")
-        
-        _k_step = 10
-        _file_list = str()
-        _list_idx = 0
-        _tmp_out_name = self.sub_opts.output[:self.sub_opts.output.rfind('.')]
-        for fidx, file in enumerate(self.data_files):
-            if (fidx+1)%_k_step != 0:
-                _file_list += f" {file}"
-            else:
-                _out_full_name = f"{_tmp_out_name}_{_list_idx}.root"
-                _cmd = f"hadd {_out_full_name}{_file_list}"
-                if self.sub_opts.verbose:
-                    print(_cmd)
-                subprocess.run(_cmd, shell=True, check=True)
-                _file_list = f" {_out_full_name}"
-                _list_idx += 1
-        if _file_list:
-            _out_full_name = f"{_tmp_out_name}_{_list_idx}.root"
-            if self.sub_opts.verbose:
-                print(_cmd)
-            _cmd = f"hadd {_out_full_name}{_file_list}"
-            subprocess.run(_cmd, shell=True, check=True)
 
     def aladin(self):
         parser = ArgumentParser(
@@ -517,119 +580,6 @@ class dampe_helper():
         self.parse_input_list(start_idx=0)
         self.create_condor_files(collector=False, kompressor=False, aladin=False, split=True, mt=False)
         self.submit_jobs()
-
-    def TestROOTFile(self, path):
-        from ROOT import TFile
-        _tmp_file = TFile(path)
-        if _tmp_file and not _tmp_file.IsOpen():
-            return False
-        elif _tmp_file and _tmp_file.IsOpen() and _tmp_file.IsZombie():
-            _tmp_file.Close()
-            return False
-        elif _tmp_file and _tmp_file.IsOpen() and _tmp_file.TestBit(TFile.kRecovered):
-            _tmp_file.Close()
-            return False
-        else:
-            _tmp_file.Close()
-            return True
-
-    def getListOfFiles(self, condor_wd):
-        from ROOT import TFile
-
-        # Starting loop on output condor dirs
-        for tmp_dir in os.listdir(condor_wd):
-            if tmp_dir.startswith('job_'):
-                full_dir_path = condor_wd + "/" + tmp_dir
-                expected_condor_outDir = full_dir_path + "/outFiles"
-                # Check if 'outFiles' dir exists
-                if os.path.isdir(expected_condor_outDir):
-                    _list_dir = [expected_condor_outDir + "/" + file for file in os.listdir(expected_condor_outDir) if file.endswith('.root')]
-                    skipped_dir = False
-                    good_file_in_dir = True
-                    for tmp_acc_full_path in _list_dir:
-                        # Check if output ROOT file exists
-                        if os.path.isfile(tmp_acc_full_path):
-                            # Check if output ROOT file is redable
-                            if self.TestROOTFile(tmp_acc_full_path):
-                                tmp_acc_file = TFile.Open(
-                                    tmp_acc_full_path, "READ")
-                                # Check if output ROOT file is redable
-                                if tmp_acc_file.IsOpen():
-                                    # Check if output ROOT file has keys
-                                    outKeys = tmp_acc_file.GetNkeys()
-                                    if outKeys:
-                                        if good_file_in_dir:
-                                            self.data_dirs.append(full_dir_path)
-                                            good_file_in_dir = False
-                                        self.data_files.append(tmp_acc_full_path)
-                                    else:
-                                        # output ROOT file has been open but has not keys
-                                        if not skipped_dir:
-                                            self.skipped_dirs.append(full_dir_path)
-                                            skipped_dir = True
-                                        self.skipped_file_noKeys += 1
-                            else:
-                                # output ROOT file has not been opened correctly
-                                if not skipped_dir:
-                                    self.skipped_dirs.append(full_dir_path)
-                                    skipped_dir = True
-                                self.skipped_file_notReadable += 1
-                        else:
-                            # output ROOT file does not exist
-                            if not skipped_dir:
-                                self.skipped_dirs.append(full_dir_path)
-                                skipped_dir = True
-                            self.skipped_file_notROOTfile += 1
-                else:
-                    # 'outFiles' dir does not exists
-                    self.skipped_dirs.append(full_dir_path)
-                    self.skipped_file_notFinalDir += 1
-
-    def clean_condor_dir(self, dir):
-        os.chdir(dir)
-        outCondor = [filename for filename in os.listdir(
-            '.') if filename.startswith("out")]
-
-        # Clean the job dir
-        if outCondor:
-            for elm in outCondor:
-                if os.path.isdir(elm):
-                    shutil.rmtree(elm)
-                if os.path.isfile(elm):
-                    os.remove(elm)
-
-    def resubmit_condor_jobs(self, skipped_dirs, verbose):
-        for dir in skipped_dirs:
-            self.clean_condor_dir(dir)
-
-            # Submit HTCondor job
-            if verbose:
-                print('Resubmitting job from folder: {}'.format(dir))
-
-            subprocess.run(
-                "condor_submit -name sn-01.cr.cnaf.infn.it -spool crawler.sub", shell=True, check=True)
-
-    def cargo(self):
-        parser = ArgumentParser(
-            description='CARGO Utility')
-        parser.add_argument("-i", "--input", type=str,
-                            dest='input', help='Input condor jobs WD')
-        parser.add_argument("-o", "--output", type=str,
-                            dest='output', help='Output ROOT files WD')
-        parser.add_argument("-v", "--verbose", dest='verbose', default=False,
-                            action='store_true', help='run in high verbosity mode')
-        args = parser.parse_args(sys.argv[2:])
-        self.sub_opts = args
-        if self.sub_opts.verbose:
-            print("Scanning original data directory...")
-        self.getListOfFiles(self.sub_opts.input)
-        print("Start moving ROOT files...")
-        for _ctn, _file in enumerate(self.data_files):
-            _filename = "simu_result_" + str(_ctn) + ".root"
-            _dest = self.sub_opts.output + "/" + _filename
-            if self.sub_opts.verbose:
-                print(f"Moving {_file} -> {_dest}")
-            shutil.copy2(_file, _dest)
 
     def status(self):
         parser = ArgumentParser(
@@ -702,6 +652,56 @@ class dampe_helper():
                     for elm in self.data_files:
                         _final_list.write(elm + "\n")
 
+    def integral(self):
+        parser = ArgumentParser(
+            description='Add Kompressor out files')
+        parser.add_argument("-i", "--input", type=str,
+                            dest='input', help='Input condor jobs WD')
+        parser.add_argument("-o", "--output", type=str,
+                            dest='output', help='output ROOT file')
+        parser.add_argument("-f", "--filter", type=str,
+                            dest='filter', help='File name filter')
+        parser.add_argument("-a", "--aladin", dest='aladin', default=False,
+                            action='store_true', help='integral for aladin facility')
+        parser.add_argument("-v", "--verbose", dest='verbose', default=False,
+                            action='store_true', help='run in high verbosity mode')
+
+        
+        args = parser.parse_args(sys.argv[2:])
+        self.sub_opts = args
+        
+        if self.sub_opts.verbose:
+            print("Scanning original data directory...")
+        self.getListOfFiles(self.sub_opts.input)
+        if self.sub_opts.filter:
+            self.cleanListOfFiles()
+        if self.sub_opts.aladin:
+            self.orderListOfFiles()
+            
+        if self.sub_opts.verbose:
+            print(f"Going to add {len(self.data_files)} ROOT files...")
+        
+        _k_step = 10
+        _file_list = str()
+        _list_idx = 0
+        _tmp_out_name = self.sub_opts.output[:self.sub_opts.output.rfind('.')]
+        for fidx, file in enumerate(self.data_files):
+            if (fidx+1)%_k_step != 0:
+                _file_list += f" {file}"
+            else:
+                _out_full_name = f"{_tmp_out_name}_{_list_idx}.root"
+                _cmd = f"hadd {_out_full_name}{_file_list}"
+                if self.sub_opts.verbose:
+                    print(_cmd)
+                subprocess.run(_cmd, shell=True, check=True)
+                _file_list = f" {_out_full_name}"
+                _list_idx += 1
+        if _file_list:
+            _out_full_name = f"{_tmp_out_name}_{_list_idx}.root"
+            if self.sub_opts.verbose:
+                print(_cmd)
+            _cmd = f"hadd {_out_full_name}{_file_list}"
+            subprocess.run(_cmd, shell=True, check=True)
 
 if __name__ == '__main__':
     dampe_helper()
