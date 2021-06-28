@@ -410,7 +410,7 @@ class dampe_helper():
         self.create_condor_files(collector=False, kompressor=True, aladin=False, split=False, mt=False)
         self.submit_jobs()
     
-    def kompressor_add(self):
+    def integral(self):
         parser = ArgumentParser(
             description='Add Kompressor out files')
         parser.add_argument("-i", "--input", type=str,
