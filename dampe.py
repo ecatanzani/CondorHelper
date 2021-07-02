@@ -60,7 +60,8 @@ class dampe_helper():
                         data_list.clear()
             if data_list:
                 _tmp_out_dir = out_dir + "/" + "job_" + str(list_idx)
-                _dir_data = self.write_list_to_file(data_list, _tmp_out_dir, recursive)
+                _dir_data = self.write_list_to_file(
+                    data_list, _tmp_out_dir, recursive)
                 if _dir_data[0]:
                     self.condorDirs.append(_dir_data[1])
                     list_idx += 1
@@ -91,7 +92,8 @@ class dampe_helper():
                 expected_condor_outDir = full_dir_path + "/outFiles"
                 # Check if 'outFiles' dir exists
                 if os.path.isdir(expected_condor_outDir):
-                    _list_dir = [expected_condor_outDir + "/" + file for file in os.listdir(expected_condor_outDir) if file.endswith('.root')]
+                    _list_dir = [expected_condor_outDir + "/" + file for file in os.listdir(
+                        expected_condor_outDir) if file.endswith('.root')]
                     skipped_dir = False
                     good_file_in_dir = True
                     for tmp_acc_full_path in _list_dir:
@@ -107,13 +109,16 @@ class dampe_helper():
                                     outKeys = tmp_acc_file.GetNkeys()
                                     if outKeys:
                                         if good_file_in_dir:
-                                            self.data_dirs.append(full_dir_path)
+                                            self.data_dirs.append(
+                                                full_dir_path)
                                             good_file_in_dir = False
-                                        self.data_files.append(tmp_acc_full_path)
+                                        self.data_files.append(
+                                            tmp_acc_full_path)
                                     else:
                                         # output ROOT file has been open but has not keys
                                         if not skipped_dir:
-                                            self.skipped_dirs.append(full_dir_path)
+                                            self.skipped_dirs.append(
+                                                full_dir_path)
                                             skipped_dir = True
                                         self.skipped_file_noKeys += 1
                             else:
@@ -140,7 +145,7 @@ class dampe_helper():
 
     def orderListOfFiles(self):
         ordered_list = []
-        for bin_idx in range(0,len(self.data_files)):
+        for bin_idx in range(0, len(self.data_files)):
             for file in self.data_files:
                 if f"job_{bin_idx}/" in file:
                     ordered_list.append(file)
@@ -169,7 +174,7 @@ class dampe_helper():
 
             subprocess.run(
                 "condor_submit -name sn-01.cr.cnaf.infn.it -spool crawler.sub", shell=True, check=True)
-                
+
     def extract_timing_info(self):
         with open(self.sub_opts.list, 'r') as inputList:
             for filename in inputList:
@@ -227,7 +232,7 @@ class dampe_helper():
         else:
             if self.sub_opts.verbose:
                 print('Using existing output path directory: {}'.format(tmp_dir_name))
-            if self.sub_opts.recreate:
+            if self.sub_opts.new:
                 if self.sub_opts.verbose:
                     print(
                         "The directory, containing the following files, will be deleted...")
@@ -249,7 +254,7 @@ class dampe_helper():
                                 lines.sort()
                                 file_list += lines
                         data_list = file_list
-                    
+
                     for idx, file in enumerate(data_list):
                         if idx == 0:
                             out_tmp_list.write(file)
@@ -285,11 +290,12 @@ class dampe_helper():
                 try:
                     with open(subFilePath, 'w') as outSub:
                         outSub.write("universe = vanilla\n")
-                        if kompressor or aladin or split: # MT option only works with kompressor software. Collector works in single core only
-                            if mt: 
+                        if kompressor or aladin or split:  # MT option only works with kompressor software. Collector works in single core only
+                            if mt:
                                 outSub.write("request_cpus = 4\n")
                                 outSub.write("request_memory = 4096\n")
-                        outSub.write('executable = {}\n'.format(bashScriptPath))
+                        outSub.write(
+                            'executable = {}\n'.format(bashScriptPath))
                         outSub.write('output = {}\n'.format(outputPath))
                         outSub.write('error = {}\n'.format(errPath))
                         outSub.write('log = {}\n'.format(logPath))
@@ -307,7 +313,7 @@ class dampe_helper():
                 dataListPath = cDir + str("/dataList.txt")
                 try:
                     with open(bashScriptPath, "w") as outScript:
-                        if collector: 
+                        if collector:
                             self.collector_task(outScript, dataListPath, cDir)
                         if kompressor:
                             self.kompressor_task(outScript, dataListPath, cDir)
@@ -316,7 +322,8 @@ class dampe_helper():
                         if split:
                             self.split_task(outScript, dataListPath, cDir)
                 except OSError:
-                    print('ERROR creating HTCondor bash script file in: {}'.format(cDir))
+                    print(
+                        'ERROR creating HTCondor bash script file in: {}'.format(cDir))
                     raise
                 else:
                     if self.sub_opts.verbose:
@@ -324,7 +331,7 @@ class dampe_helper():
 
                 # Make bash script executable
                 subprocess.run('chmod +x {}'.format(bashScriptPath),
-                            shell=True, check=True)
+                               shell=True, check=True)
 
     def submit_jobs(self):
         for folder in self.condorDirs:
@@ -353,13 +360,15 @@ class dampe_helper():
 
     def kompressor_task(self, outScript, dataListPath, cDir):
         tmpOutDir = cDir + str("/outFiles")
-        ldpath = self.sub_opts.executable[:self.sub_opts.executable.rfind('Kompressor/')+11] + "dylib"
+        ldpath = self.sub_opts.executable[:self.sub_opts.executable.rfind(
+            'Kompressor/')+11] + "dylib"
         outScript.write("#!/usr/bin/env bash\n")
         outScript.write("source /opt/rh/devtoolset-7/enable\n")
-        outScript.write("source /storage/gpfs_data/dampe/users/ecatanzani/deps/root-6.22/bin/thisroot.sh\n")
+        outScript.write(
+            "source /storage/gpfs_data/dampe/users/ecatanzani/deps/root-6.22/bin/thisroot.sh\n")
         outScript.write(f"export LD_LIBRARY_PATH={ldpath}:$LD_LIBRARY_PATH\n")
         outScript.write(f"mkdir {tmpOutDir}\n")
-        
+
         _opt_command = ""
         if self.sub_opts.config:
             _opt_command += f"-w {self.sub_opts.config} "
@@ -376,7 +385,7 @@ class dampe_helper():
         if self.sub_opts.no_split:
             _opt_command += f"-n {self.sub_opts.no_split}"
         if self.sub_opts.likelihood:
-            _opt_command += "-l "    
+            _opt_command += "-l "
 
         _command = f"{self.sub_opts.executable} -i {dataListPath} -d {tmpOutDir} -v {_opt_command}"
 
@@ -384,37 +393,43 @@ class dampe_helper():
 
     def aladin_task(self, outScript, dataListPath, cDir):
         tmpOutDir = cDir + str("/outFiles")
-        ldpath = self.sub_opts.executable[:self.sub_opts.executable.rfind('Aladin/')+7] + "dylib"
+        ldpath = self.sub_opts.executable[:self.sub_opts.executable.rfind(
+            'Aladin/')+7] + "dylib"
         outScript.write("#!/usr/bin/env bash\n")
         outScript.write("source /opt/rh/devtoolset-7/enable\n")
-        outScript.write("source /storage/gpfs_data/dampe/users/ecatanzani/deps/root-6.22/bin/thisroot.sh\n")
+        outScript.write(
+            "source /storage/gpfs_data/dampe/users/ecatanzani/deps/root-6.22/bin/thisroot.sh\n")
         outScript.write(f"export LD_LIBRARY_PATH={ldpath}:$LD_LIBRARY_PATH\n")
         outScript.write(f"mkdir {tmpOutDir}\n")
-        
+
         _opt_command = ""
         if self.sub_opts.config:
             _opt_command += f"-w {self.sub_opts.config} "
         if self.sub_opts.mc:
             _opt_command += "-m "
-        if self.sub_opts.behaviour:
-            _opt_command += f"-r {self.sub_opts.behaviour} "
+        if self.sub_opts.regularize:
+            _opt_command += f"-r {self.sub_opts.regularize} "
         if self.sub_opts.gaussianize:
             _opt_command += "-g "
         if self.sub_opts.likelihood:
             _opt_command += "-l "
         if self.sub_opts.fit:
-            _opt_command += "-f "    
+            _opt_command += "-f "
+        if self.sub_opts.energy_bin:
+            _opt_command += f"-b {self.sub_opts.energy_bin} "
 
         _command = f"{self.sub_opts.executable} -i {dataListPath} -d {tmpOutDir} -v {_opt_command}"
 
         outScript.write(_command)
-    
+
     def split_task(self, outScript, dataListPath, cDir):
         tmpOutDir = cDir + str("/outFiles")
-        ldpath = self.sub_opts.executable[:self.sub_opts.executable.rfind('Split/')+6] + "dylib"
+        ldpath = self.sub_opts.executable[:self.sub_opts.executable.rfind(
+            'Split/')+6] + "dylib"
         outScript.write("#!/usr/bin/env bash\n")
         outScript.write("source /opt/rh/devtoolset-7/enable\n")
-        outScript.write("source /storage/gpfs_data/dampe/users/ecatanzani/deps/root-6.22/bin/thisroot.sh\n")
+        outScript.write(
+            "source /storage/gpfs_data/dampe/users/ecatanzani/deps/root-6.22/bin/thisroot.sh\n")
         outScript.write(f"export LD_LIBRARY_PATH={ldpath}:$LD_LIBRARY_PATH\n")
         outScript.write(f"mkdir {tmpOutDir}\n")
 
@@ -463,10 +478,13 @@ class dampe_helper():
         else:
             start_idx = 0
             if self.sub_opts.append:
-                jobs_folder = [ file for file in os.listdir(self.sub_opts.output) if file.startswith('job_') ]
-                start_idx = max([ int(file[file.rfind('_')+1:]) for file in jobs_folder ])+1
+                jobs_folder = [file for file in os.listdir(
+                    self.sub_opts.output) if file.startswith('job_')]
+                start_idx = max([int(file[file.rfind('_')+1:])
+                                 for file in jobs_folder])+1
             self.parse_input_list(start_idx)
-        self.create_condor_files(collector=True, kompressor=False, aladin=False, split=False, mt=False)
+        self.create_condor_files(
+            collector=True, kompressor=False, aladin=False, split=False, mt=False)
         self.submit_jobs()
 
     def kompressor(self):
@@ -505,13 +523,14 @@ class dampe_helper():
 
         args = parser.parse_args(sys.argv[2:])
         self.sub_opts = args
-        
+
         _recursive = False
         if self.sub_opts.likelihood:
             self.sub_opts.file = 1
             _recursive = True
         self.parse_input_list(start_idx=0, recursive=_recursive)
-        self.create_condor_files(collector=False, kompressor=True, aladin=False, split=False, mt=False)
+        self.create_condor_files(
+            collector=False, kompressor=True, aladin=False, split=False, mt=False)
         self.submit_jobs()
 
     def aladin(self):
@@ -525,33 +544,35 @@ class dampe_helper():
                             dest='output', help='HTC output directory')
         parser.add_argument("-m", "--mc", dest='mc',
                             default=False, action='store_true', help='MC event collector')
-        parser.add_argument("-b", "--behaviour", type=str,
-                            dest='behaviour', help='BDT variables regularizer facility')
+        parser.add_argument("-r", "--regularize", type=str,
+                            dest='regularize', help='BDT variables regularizer facility')
+        parser.add_argument("-b", "--bin", type=int,
+                            dest='energy_bin', help='files to process in job')
         parser.add_argument("-g", "--gaussianize", dest='gaussianize', default=False,
                             action='store_true', help='BDT variables gaussianizer facility')
         parser.add_argument("-k", "--likelihood", dest='likelihood', default=False,
                             action='store_true', help='likelihood analysis facility')
         parser.add_argument("-t", "--fit", dest='fit', default=False,
                             action='store_true', help='fit analysis facility')
-
         parser.add_argument("-f", "--file", type=int, dest='file',
                             const=10, nargs='?', help='files to process in job')
         parser.add_argument("-x", "--executable", type=str,
                             dest='executable', help='Analysis script')
         parser.add_argument("-v", "--verbose", dest='verbose', default=False,
                             action='store_true', help='run in high verbosity mode')
-        parser.add_argument("-r", "--recreate", dest='recreate', default=False,
+        parser.add_argument("-n", "--new", dest='new', default=False,
                             action='store_true', help='recreate output dirs if present')
 
         args = parser.parse_args(sys.argv[2:])
         self.sub_opts = args
-        
+
         _recursive = False
         if self.sub_opts.likelihood or self.sub_opts.fit:
             self.sub_opts.file = 1
             _recursive = True
         self.parse_input_list(start_idx=0, recursive=_recursive)
-        self.create_condor_files(collector=False, kompressor=False, aladin=True, split=False, mt=False)
+        self.create_condor_files(
+            collector=False, kompressor=False, aladin=True, split=False, mt=False)
         self.submit_jobs()
 
     def split(self):
@@ -578,7 +599,8 @@ class dampe_helper():
         self.sub_opts = args
 
         self.parse_input_list(start_idx=0)
-        self.create_condor_files(collector=False, kompressor=False, aladin=False, split=True, mt=False)
+        self.create_condor_files(
+            collector=False, kompressor=False, aladin=False, split=True, mt=False)
         self.submit_jobs()
 
     def status(self):
@@ -629,22 +651,26 @@ class dampe_helper():
                     self.skipped_dirs, self.sub_opts.verbose)
         if self.sub_opts.list:
             if self.sub_opts.split:
-                _single_job = [int(file[file.rfind('_')+1:file.rfind('.')]) for file in self.data_files if "job_0" in file]
+                _single_job = [int(file[file.rfind('_')+1:file.rfind('.')])
+                               for file in self.data_files if "job_0" in file]
                 _single_job.sort()
                 energy_nbins = _single_job[-1]
                 _single_bin_lists = []
                 for bin_idx in range(1, energy_nbins+1):
-                    tmp_bin_files = [file for file in self.data_files if f"energybin_{bin_idx}.root" in file]
-                    _list_path = self.sub_opts.input[self.sub_opts.input.rfind('/')+1:] + f"_energybin_{bin_idx}.txt"
+                    tmp_bin_files = [
+                        file for file in self.data_files if f"energybin_{bin_idx}.root" in file]
+                    _list_path = self.sub_opts.input[self.sub_opts.input.rfind(
+                        '/')+1:] + f"_energybin_{bin_idx}.txt"
                     _single_bin_lists.append(f"{os.getcwd()}/{_list_path}")
                     with open(_list_path, "w") as _final_list:
                         for elm in tmp_bin_files:
                             _final_list.write(elm + "\n")
-                _list_path = self.sub_opts.input[self.sub_opts.input.rfind('/')+1:] + "_energybin_all_lists.txt"
+                _list_path = self.sub_opts.input[self.sub_opts.input.rfind(
+                    '/')+1:] + "_energybin_all_lists.txt"
                 with open(_list_path, "w") as _final_list:
                     for elm in _single_bin_lists:
-                         _final_list.write(elm + "\n")
-                
+                        _final_list.write(elm + "\n")
+
             else:
                 _list_path = self.sub_opts.input[self.sub_opts.input.rfind(
                     '/')+1:] + ".txt"
@@ -666,10 +692,9 @@ class dampe_helper():
         parser.add_argument("-v", "--verbose", dest='verbose', default=False,
                             action='store_true', help='run in high verbosity mode')
 
-        
         args = parser.parse_args(sys.argv[2:])
         self.sub_opts = args
-        
+
         if self.sub_opts.verbose:
             print("Scanning original data directory...")
         self.getListOfFiles(self.sub_opts.input)
@@ -677,16 +702,16 @@ class dampe_helper():
             self.cleanListOfFiles()
         if self.sub_opts.aladin:
             self.orderListOfFiles()
-            
+
         if self.sub_opts.verbose:
             print(f"Going to add {len(self.data_files)} ROOT files...")
-        
+
         _k_step = 10
         _file_list = str()
         _list_idx = 0
         _tmp_out_name = self.sub_opts.output[:self.sub_opts.output.rfind('.')]
         for fidx, file in enumerate(self.data_files):
-            if (fidx+1)%_k_step != 0:
+            if (fidx+1) % _k_step != 0:
                 _file_list += f" {file}"
             else:
                 _out_full_name = f"{_tmp_out_name}_{_list_idx}.root"
@@ -702,6 +727,7 @@ class dampe_helper():
                 print(_cmd)
             _cmd = f"hadd {_out_full_name}{_file_list}"
             subprocess.run(_cmd, shell=True, check=True)
+
 
 if __name__ == '__main__':
     dampe_helper()
