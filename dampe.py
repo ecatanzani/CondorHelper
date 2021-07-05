@@ -391,6 +391,11 @@ class dampe_helper():
 
         outScript.write(_command)
 
+    def get_energy_bin(self, dataListPath):
+        with open(dataListPath, "r") as _list:
+            line = _list.readline()
+        return line[line.rfind('_')+1:line.rfind('.root')]    
+
     def aladin_task(self, outScript, dataListPath, cDir):
         tmpOutDir = cDir + str("/outFiles")
         ldpath = self.sub_opts.executable[:self.sub_opts.executable.rfind(
@@ -401,7 +406,7 @@ class dampe_helper():
             "source /storage/gpfs_data/dampe/users/ecatanzani/deps/root-6.22/bin/thisroot.sh\n")
         outScript.write(f"export LD_LIBRARY_PATH={ldpath}:$LD_LIBRARY_PATH\n")
         outScript.write(f"mkdir {tmpOutDir}\n")
-
+        
         _opt_command = ""
         if self.sub_opts.config:
             _opt_command += f"-w {self.sub_opts.config} "
@@ -413,10 +418,10 @@ class dampe_helper():
             _opt_command += "-g "
         if self.sub_opts.likelihood:
             _opt_command += "-l "
+            _opt_command += f"-b {self.get_energy_bin(dataListPath)} "
         if self.sub_opts.fit:
             _opt_command += "-f "
-        if self.sub_opts.energy_bin:
-            _opt_command += f"-b {self.sub_opts.energy_bin} "
+            _opt_command += f"-b {self.get_energy_bin(dataListPath)} "
 
         _command = f"{self.sub_opts.executable} -i {dataListPath} -d {tmpOutDir} -v {_opt_command}"
 
@@ -546,8 +551,6 @@ class dampe_helper():
                             default=False, action='store_true', help='MC event collector')
         parser.add_argument("-r", "--regularize", type=str,
                             dest='regularize', help='BDT variables regularizer facility')
-        parser.add_argument("-b", "--bin", type=int,
-                            dest='energy_bin', help='files to process in job')
         parser.add_argument("-g", "--gaussianize", dest='gaussianize', default=False,
                             action='store_true', help='BDT variables gaussianizer facility')
         parser.add_argument("-k", "--likelihood", dest='likelihood', default=False,
@@ -711,9 +714,9 @@ class dampe_helper():
         _list_idx = 0
         _tmp_out_name = self.sub_opts.output[:self.sub_opts.output.rfind('.')]
         for fidx, file in enumerate(self.data_files):
-            if (fidx+1) % _k_step != 0:
+            _file_list += f" {file}"
+            if (fidx+1) % _k_step == 0:
                 _file_list += f" {file}"
-            else:
                 _out_full_name = f"{_tmp_out_name}_{_list_idx}.root"
                 _cmd = f"hadd {_out_full_name}{_file_list}"
                 if self.sub_opts.verbose:
