@@ -716,7 +716,6 @@ class dampe_helper():
         for fidx, file in enumerate(self.data_files):
             _file_list += f" {file}"
             if (fidx+1) % _k_step == 0:
-                _file_list += f" {file}"
                 _out_full_name = f"{_tmp_out_name}_{_list_idx}.root"
                 _cmd = f"hadd {_out_full_name}{_file_list}"
                 if self.sub_opts.verbose:
