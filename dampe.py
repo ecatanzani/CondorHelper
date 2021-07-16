@@ -95,8 +95,7 @@ class dampe_helper():
                     _list_dir = [expected_condor_outDir + "/" + file for file in os.listdir(
                         expected_condor_outDir) if file.endswith('.root')]
                     skipped_dir = False
-                    good_file_in_dir = True
-                    for tmp_acc_full_path in _list_dir:
+                    for file_idx, tmp_acc_full_path in enumerate(_list_dir):
                         # Check if output ROOT file exists
                         if os.path.isfile(tmp_acc_full_path):
                             # Check if output ROOT file is redable
@@ -108,10 +107,9 @@ class dampe_helper():
                                     # Check if output ROOT file has keys
                                     outKeys = tmp_acc_file.GetNkeys()
                                     if outKeys:
-                                        if good_file_in_dir:
+                                        if file_idx == len(_list_dir)-1 and not skipped_dir:
                                             self.data_dirs.append(
                                                 full_dir_path)
-                                            good_file_in_dir = False
                                         self.data_files.append(
                                             tmp_acc_full_path)
                                     else:
