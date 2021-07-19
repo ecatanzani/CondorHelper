@@ -266,15 +266,15 @@ class dampe_helper():
                     print('Created output list: {}'.format(list_path))
         return (good_dir, tmp_dir_name)
 
-    def checkargs(self, collector, kompressor, aladin, split, acceptance):
-        bool_list = [collector, kompressor, aladin, split, acceptance]
+    def checkargs(self, collector, kompressor, aladin, split, acceptance, efficiency):
+        bool_list = [collector, kompressor, aladin, split, acceptance, efficiency]
         if bool_list.count(True) == 1:
             return True
         else:
             return False
 
-    def create_condor_files(self, collector, kompressor, aladin, split, acceptance, mt):
-        if self.checkargs(collector, kompressor, aladin, split, acceptance):
+    def create_condor_files(self, collector, kompressor, aladin, split, acceptance, efficiency, mt):
+        if self.checkargs(collector, kompressor, aladin, split, acceptance, efficiency):
             for cDir in self.condorDirs:
 
                 # Find out paths
@@ -321,6 +321,8 @@ class dampe_helper():
                             self.split_task(outScript, dataListPath, cDir)
                         if acceptance:
                             self.acceptance_task(outScript, dataListPath, cDir)
+                        if efficiency:
+                            self.efficiency_task(outScript, dataListPath, cDir)
                 except OSError:
                     print(
                         'ERROR creating HTCondor bash script file in: {}'.format(cDir))
@@ -464,6 +466,22 @@ class dampe_helper():
 
         outScript.write(_command)
 
+    def efficiency_task(self, outScript, dataListPath, cDir):
+        tmpOutDir = cDir + str("/outFiles")
+        outScript.write("#!/usr/bin/env bash\n")
+        outScript.write("source /opt/rh/devtoolset-7/enable\n")
+        outScript.write(
+            "source /storage/gpfs_data/dampe/users/ecatanzani/deps/root-6.22/bin/thisroot.sh\n")
+        outScript.write(f"mkdir {tmpOutDir}\n")
+        
+        _opt_command = ""
+        if self.sub_opts.config:
+            _opt_command += f"-w {self.sub_opts.config} "
+
+        _command = f"{self.sub_opts.executable} -i {dataListPath} -d {tmpOutDir} -v {_opt_command}"
+
+        outScript.write(_command)
+
     def collector(self):
         parser = ArgumentParser(
             description='DAMPE all-electron collector facility')
@@ -505,7 +523,7 @@ class dampe_helper():
                                  for file in jobs_folder])+1
             self.parse_input_list(start_idx)
         self.create_condor_files(
-            collector=True, kompressor=False, aladin=False, split=False, acceptance=False, mt=False)
+            collector=True, kompressor=False, aladin=False, split=False, acceptance=False, efficiency=False, mt=False)
         self.submit_jobs()
 
     def kompressor(self):
@@ -551,7 +569,7 @@ class dampe_helper():
             _recursive = True
         self.parse_input_list(start_idx=0, recursive=_recursive)
         self.create_condor_files(
-            collector=False, kompressor=True, aladin=False, split=False, acceptance=False, mt=False)
+            collector=False, kompressor=True, aladin=False, split=False, acceptance=False, efficiency=False, mt=False)
         self.submit_jobs()
 
     def aladin(self):
@@ -591,7 +609,7 @@ class dampe_helper():
             _recursive = True
         self.parse_input_list(start_idx=0, recursive=_recursive)
         self.create_condor_files(
-            collector=False, kompressor=False, aladin=True, split=False, acceptance=False, mt=False)
+            collector=False, kompressor=False, aladin=True, split=False, acceptance=False, efficiency=False, mt=False)
         self.submit_jobs()
 
     def split(self):
@@ -619,7 +637,7 @@ class dampe_helper():
 
         self.parse_input_list(start_idx=0)
         self.create_condor_files(
-            collector=False, kompressor=False, aladin=False, split=True, acceptance=False, mt=False)
+            collector=False, kompressor=False, aladin=False, split=True, acceptance=False, efficiency=False, mt=False)
         self.submit_jobs()
 
     def acceptance(self):
@@ -645,7 +663,33 @@ class dampe_helper():
        
         self.parse_input_list(start_idx=0, recursive=False)
         self.create_condor_files(
-            collector=False, kompressor=False, aladin=False, split=False, acceptance=True, mt=False)
+            collector=False, kompressor=False, aladin=False, split=False, acceptance=True, efficiency=False, mt=False)
+        self.submit_jobs()
+
+    def efficiency(self):
+        parser = ArgumentParser(
+            description='DAMPE Efficiency facility')
+        parser.add_argument("-l", "--list", type=str,
+                            dest='list', help='Input MC list')
+        parser.add_argument("-c", "--config", type=str,
+                            dest='config', help='Software Config Directory')
+        parser.add_argument("-o", "--output", type=str,
+                            dest='output', help='HTC output directory')
+        parser.add_argument("-f", "--file", type=int, dest='file',
+                            const=10, nargs='?', help='files to process in job')
+        parser.add_argument("-x", "--executable", type=str,
+                            dest='executable', help='Analysis script')
+        parser.add_argument("-v", "--verbose", dest='verbose', default=False,
+                            action='store_true', help='run in high verbosity mode')
+        parser.add_argument("-n", "--new", dest='new', default=False,
+                            action='store_true', help='recreate output dirs if present')
+
+        args = parser.parse_args(sys.argv[2:])
+        self.sub_opts = args
+       
+        self.parse_input_list(start_idx=0, recursive=False)
+        self.create_condor_files(
+            collector=False, kompressor=False, aladin=False, split=False, acceptance=False, efficiency=True, mt=False)
         self.submit_jobs()
 
     def status(self):
