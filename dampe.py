@@ -477,6 +477,8 @@ class dampe_helper():
         _opt_command = ""
         if self.sub_opts.config:
             _opt_command += f"-w {self.sub_opts.config} "
+        if self.sub_opts.mc:
+            _opt_command += "-m "
 
         _command = f"{self.sub_opts.executable} -i {dataListPath} -d {tmpOutDir} -v {_opt_command}"
 
@@ -675,6 +677,8 @@ class dampe_helper():
                             dest='config', help='Software Config Directory')
         parser.add_argument("-o", "--output", type=str,
                             dest='output', help='HTC output directory')
+        parser.add_argument("-m", "--mc", dest='mc',
+                            default=False, action='store_true', help='MC event collector')
         parser.add_argument("-f", "--file", type=int, dest='file',
                             const=10, nargs='?', help='files to process in job')
         parser.add_argument("-x", "--executable", type=str,
