@@ -1,16 +1,11 @@
 import os
-import sys
 import shutil
 import subprocess
-from argparse import ArgumentParser
 
-
-class dampe_helper():
+class helper():
 
     def __init__(self):
         self.condorDirs = []
-        self.sub_opts = None
-        self.years_content = {}
         self.skipped_dirs = []
         self.data_dirs = []
         self.data_files = []
@@ -21,51 +16,79 @@ class dampe_helper():
         self.skipped_file_notReadable = 0
         self.skipped_file_noKeys = 0
         self.ntuples_file_size = 6
-        parser = ArgumentParser(
-                description='Condor Deploy Helper',
-                usage='''<command> [<args>]
 
-	The most commonly used commands are:
-		** DAMPE **
-		collector   	call DAMPE all-electron flux facility
-		status		call DAMPE HTCondor status facility
-        kompressor		call DAMPE Kompressor facility
-        kompressor_add		add Kompressor out files
-        cargo		move ROOT files to final destination
-	''')
-
-        parser.add_argument('command', help='Subcommand to run')
-        args = parser.parse_args(sys.argv[1:2])
-        if not hasattr(self, args.command):
-            print("Unrecognized command")
-            parser.print_help()
-            exit(1)
-        getattr(self, args.command)()
-
-    def parse_input_list(self, start_idx, recursive=False):
-        out_dir = self.sub_opts.output
-        with open(self.sub_opts.list, 'r') as inputList:
+    def parse_input_list(self, pars: dict, start_idx: int = 0, recursive: bool = False):
+        out_dir = pars['output']
+        with open(pars['list'], 'r') as inputList:
             list_idx = start_idx
             data_list = []
             for file_name in inputList:
                 if not file_name.startswith('.'):
                     data_list.append(file_name.rstrip('\n'))
-                    if len(data_list) == self.sub_opts.file:
-                        _tmp_out_dir = out_dir + "/" + "job_" + str(list_idx)
-                        _dir_data = self.write_list_to_file(
-                            data_list, _tmp_out_dir, recursive)
+                    if len(data_list) == pars['files']:
+                        _dir_data = self.write_list_to_file(data_list, f"{out_dir}/job_{list_idx}", recursive, pars['recreate'], pars['verbose'])
                         if _dir_data[0]:
                             self.condorDirs.append(_dir_data[1])
-                            list_idx += 1
+                        list_idx += 1
                         data_list.clear()
             if data_list:
-                _tmp_out_dir = out_dir + "/" + "job_" + str(list_idx)
-                _dir_data = self.write_list_to_file(
-                    data_list, _tmp_out_dir, recursive)
+                _dir_data = self.write_list_to_file(data_list, f"{out_dir}/job_{list_idx}", recursive, pars['recreate'], pars['verbose'])
                 if _dir_data[0]:
                     self.condorDirs.append(_dir_data[1])
-                    list_idx += 1
+                list_idx += 1
                 data_list.clear()
+
+    def write_list_to_file(self, data_list: list, tmp_dir_name: str, recursive: bool = False, recreate: bool = False, verbose: bool = True) -> tuple:
+        good_dir = False
+        
+        if not os.path.isdir(tmp_dir_name):
+            try:
+                os.mkdir(tmp_dir_name)
+            except OSError:
+                print(f"Creation of the output directory {tmp_dir_name} failed")
+                raise
+            else:
+                good_dir = True
+                if verbose:
+                    print(f"Succesfully created output directory: {tmp_dir_name}")
+        else:
+            if recreate:
+                if verbose:
+                    print(f"Using existing output path directory: {tmp_dir_name}")
+                    print("The directory, containing the following files, will be deleted...")
+                    print(os.listdir(tmp_dir_name))
+                shutil.rmtree(tmp_dir_name)
+                os.mkdir(tmp_dir_name)
+                good_dir = True
+            else:
+                if verbose:
+                    print(f"Found existing output path directory: {tmp_dir_name} ... exit")
+                good_dir = False
+        if good_dir:
+            list_path = f"{tmp_dir_name}/dataList.txt"
+            try:
+                with open(list_path, 'w') as out_tmp_list:
+                    if recursive:
+                        file_list = []
+                        for sub_list in data_list:
+                            with open(sub_list, "r") as _file:
+                                lines = _file.read().splitlines()
+                                lines.sort()
+                                file_list += lines
+                        data_list = file_list
+
+                    for idx, file in enumerate(data_list):
+                        if not idx:
+                            out_tmp_list.write(file)
+                        else:
+                            out_tmp_list.write(f"\n{file}")
+            except OSError:
+                print(f"Creation of the output data list {list_path} failed")
+                raise
+            else:
+                if verbose:
+                    print(f"Created output list: {list_path}")
+        return (good_dir, tmp_dir_name)
 
     def TestROOTFile(self, path):
         from ROOT import TFile
@@ -82,41 +105,36 @@ class dampe_helper():
             _tmp_file.Close()
             return True
 
-    def getListOfFiles(self, condor_wd):
+    def getListOfFiles(self, condor_wd: str):
         from ROOT import TFile
 
         # Starting loop on output condor dirs
         for tmp_dir in os.listdir(condor_wd):
             if tmp_dir.startswith('job_'):
-                full_dir_path = condor_wd + "/" + tmp_dir
-                expected_condor_outDir = full_dir_path + "/outFiles"
+                full_dir_path = f"{condor_wd}/{tmp_dir}"
+                expected_condor_outDir = f"{full_dir_path}/outFiles"
                 # Check if 'outFiles' dir exists
                 if os.path.isdir(expected_condor_outDir):
-                    _list_dir = [expected_condor_outDir + "/" + file for file in os.listdir(
-                        expected_condor_outDir) if file.endswith('.root')]
+                    _list_dir = [f"{expected_condor_outDir}/{file}" for file in os.listdir(expected_condor_outDir) if file.endswith('.root')]
                     skipped_dir = False
                     for file_idx, tmp_acc_full_path in enumerate(_list_dir):
                         # Check if output ROOT file exists
                         if os.path.isfile(tmp_acc_full_path):
                             # Check if output ROOT file is redable
                             if self.TestROOTFile(tmp_acc_full_path):
-                                tmp_acc_file = TFile.Open(
-                                    tmp_acc_full_path, "READ")
+                                tmp_acc_file = TFile.Open(tmp_acc_full_path, "READ")
                                 # Check if output ROOT file is redable
                                 if tmp_acc_file.IsOpen():
                                     # Check if output ROOT file has keys
                                     outKeys = tmp_acc_file.GetNkeys()
                                     if outKeys:
                                         if file_idx == len(_list_dir)-1 and not skipped_dir:
-                                            self.data_dirs.append(
-                                                full_dir_path)
-                                        self.data_files.append(
-                                            tmp_acc_full_path)
+                                            self.data_dirs.append(full_dir_path)
+                                        self.data_files.append(tmp_acc_full_path)
                                     else:
                                         # output ROOT file has been open but has not keys
                                         if not skipped_dir:
-                                            self.skipped_dirs.append(
-                                                full_dir_path)
+                                            self.skipped_dirs.append(full_dir_path)
                                             skipped_dir = True
                                         self.skipped_file_noKeys += 1
                             else:
@@ -151,9 +169,7 @@ class dampe_helper():
 
     def clean_condor_dir(self, dir):
         os.chdir(dir)
-        outCondor = [filename for filename in os.listdir(
-            '.') if filename.startswith("out")]
-
+        outCondor = [filename for filename in os.listdir('.') if filename.startswith("out")]
         # Clean the job dir
         if outCondor:
             for elm in outCondor:
@@ -168,200 +184,93 @@ class dampe_helper():
 
             # Submit HTCondor job
             if verbose:
-                print('Resubmitting job from folder: {}'.format(dir))
+                print(f"Resubmitting job from folder: {dir}")
 
-            subprocess.run(
-                "condor_submit -name sn-01.cr.cnaf.infn.it -spool crawler.sub", shell=True, check=True)
+            subprocess.run("condor_submit -name sn-01.cr.cnaf.infn.it -spool cndr.sub", shell=True, check=True)
 
-    def extract_timing_info(self):
-        with open(self.sub_opts.list, 'r') as inputList:
-            for filename in inputList:
-                if not filename.startswith('.'):
-                    year_fidx = filename.find('2A/') + 3
-                    year = filename[year_fidx: year_fidx + 4]
-                    month = filename[year_fidx + 4: year_fidx + 6]
-                    if year not in self.years_content:
-                        self.years_content[year] = {}
-                    if month not in self.years_content[year]:
-                        self.years_content[year][month] = []
-
-                    self.years_content[year][month].append(
-                        filename.rstrip('\n'))
-
-    def parse_timing_info(self):
-        for year in self.years_content:
-            for month in self.years_content[year]:
-                out_dir = self.sub_opts.output + "/" + year + month
-                os.mkdir(out_dir)
-                list_idx = 0
-                data_list = []
-                for file_name in self.years_content[year][month]:
-                    data_list.append(file_name.rstrip('\n'))
-                    if len(data_list) == self.sub_opts.depth:
-                        _tmp_out_dir = out_dir + "/" + "job_" + str(list_idx)
-                        _dir_data = self.write_list_to_file(
-                            data_list, _tmp_out_dir)
-                        if _dir_data[0]:
-                            self.condorDirs.append(_dir_data[1])
-                            list_idx += 1
-                        data_list.clear()
-                if data_list:
-                    _tmp_out_dir = out_dir + "/" + "job_" + str(list_idx)
-                    _dir_data = self.write_list_to_file(
-                        data_list, _tmp_out_dir)
-                    if _dir_data[0]:
-                        self.condorDirs.append(_dir_data[1])
-                        list_idx += 1
-                    data_list.clear()
-
-    def write_list_to_file(self, data_list, tmp_dir_name, recursive=False):
-        good_dir = False
-        if not os.path.isdir(tmp_dir_name):
-            try:
-                os.mkdir(tmp_dir_name)
-            except OSError:
-                print('Creation of the output directory {} failed'.format(tmp_dir_name))
-                raise
-            else:
-                good_dir = True
-                if self.sub_opts.verbose:
-                    print('Succesfully created output directory: {}'.format(
-                        tmp_dir_name))
-        else:
-            if self.sub_opts.verbose:
-                print('Using existing output path directory: {}'.format(tmp_dir_name))
-            if self.sub_opts.new:
-                if self.sub_opts.verbose:
-                    print(
-                        "The directory, containing the following files, will be deleted...")
-                    print(os.listdir(tmp_dir_name))
-                shutil.rmtree(tmp_dir_name)
-                os.mkdir(tmp_dir_name)
-                good_dir = True
-            else:
-                good_dir = False
-        if good_dir:
-            list_path = tmp_dir_name + "/dataList.txt"
-            try:
-                with open(list_path, 'w') as out_tmp_list:
-                    if recursive:
-                        file_list = []
-                        for sub_list in data_list:
-                            with open(sub_list, "r") as _file:
-                                lines = _file.read().splitlines()
-                                lines.sort()
-                                file_list += lines
-                        data_list = file_list
-
-                    for idx, file in enumerate(data_list):
-                        if idx == 0:
-                            out_tmp_list.write(file)
-                        else:
-                            out_tmp_list.write("\n%s" % file)
-            except OSError:
-                print('Creation of the output data list {} failed'.format(list_path))
-                raise
-            else:
-                if self.sub_opts.verbose:
-                    print('Created output list: {}'.format(list_path))
-        return (good_dir, tmp_dir_name)
-
-    def checkargs(self, collector, kompressor, aladin, split, acceptance, efficiency):
-        bool_list = [collector, kompressor, aladin, split, acceptance, efficiency]
-        if bool_list.count(True) == 1:
+    def checkargs(self, task: dict) -> bool:
+        if sum(task.values()) == 1:
             return True
         else:
             return False
 
-    def create_condor_files(self, collector, kompressor, aladin, split, acceptance, efficiency, mt):
-        if self.checkargs(collector, kompressor, aladin, split, acceptance, efficiency):
+    def create_condor_files(self, pars: dict, task: dict, mt: bool = False):
+        if self.checkargs(task):
             for cDir in self.condorDirs:
 
                 # Find out paths
-                outputPath = cDir + "/" + "output.log"
-                logPath = cDir + "/" + "output.clog"
-                errPath = cDir + "/" + "output.err"
-                bashScriptPath = cDir + str("/script.sh")
+                outputPath = f"{cDir}/output.log"
+                logPath = f"{cDir}/output.clog"
+                errPath = f"{cDir}/output.err"
+                bashScriptPath = f"{cDir}/script.sh"
 
                 # Writing sub file
-                subFilePath = cDir + str("/crawler.sub")
+                subFilePath = f"{cDir}/cndr.sub"
                 try:
                     with open(subFilePath, 'w') as outSub:
                         outSub.write("universe = vanilla\n")
-                        if kompressor or aladin or split or acceptance:  # MT option only works with kompressor software. Collector works in single core only
+                        if task['kompressor'] or task['aladin'] or task['split'] or task['acceptance']:
                             if mt:
                                 outSub.write("request_cpus = 4\n")
                                 outSub.write("request_memory = 4096\n")
-                        outSub.write(
-                            'executable = {}\n'.format(bashScriptPath))
-                        outSub.write('output = {}\n'.format(outputPath))
-                        outSub.write('error = {}\n'.format(errPath))
-                        outSub.write('log = {}\n'.format(logPath))
+                        outSub.write(f"executable = {bashScriptPath}\n")
+                        outSub.write(f"output = {outputPath}\n")
+                        outSub.write(f"error = {errPath}\n")
+                        outSub.write(f"log = {logPath}\n")
                         outSub.write("ShouldTransferFiles = YES\n")
                         outSub.write("WhenToTransferOutput = ON_EXIT\n")
                         outSub.write("queue 1")
                 except OSError:
-                    print('ERROR creating HTCondor sub file in: {}'.format(cDir))
+                    print(f"ERROR creating HTCondor sub file in: {cDir}")
                     raise
                 else:
-                    if self.sub_opts.verbose:
-                        print('HTCondor sub file created in: {}'.format(cDir))
+                    if pars['verbose']:
+                        print(f"HTCondor sub file created in: {cDir}")
 
                 # Build executable bash script
-                dataListPath = cDir + str("/dataList.txt")
+                dataListPath = f"{cDir}/dataList.txt"
                 try:
                     with open(bashScriptPath, "w") as outScript:
-                        if collector:
-                            self.collector_task(outScript, dataListPath, cDir)
-                        if kompressor:
-                            self.kompressor_task(outScript, dataListPath, cDir)
-                        if aladin:
-                            self.aladin_task(outScript, dataListPath, cDir)
-                        if split:
-                            self.split_task(outScript, dataListPath, cDir)
-                        if acceptance:
-                            self.acceptance_task(outScript, dataListPath, cDir)
-                        if efficiency:
-                            self.efficiency_task(outScript, dataListPath, cDir)
+                        if task['collector']:
+                            self.collector_task(outScript, dataListPath, cDir, pars)
+                        if task['kompressor']:
+                            self.kompressor_task(outScript, dataListPath, cDir, pars)
+                        if task['aladin']:
+                            self.aladin_task(outScript, dataListPath, cDir, pars)
+                        if task['split']:
+                            self.split_task(outScript, dataListPath, cDir, pars)
+                        if task['acceptance']:
+                            self.acceptance_task(outScript, dataListPath, cDir, pars)
+                        if task['efficiency']:
+                            self.efficiency_task(outScript, dataListPath, cDir, pars)
                 except OSError:
-                    print(
-                        'ERROR creating HTCondor bash script file in: {}'.format(cDir))
+                    print(f"ERROR creating HTCondor bash script file in: {cDir}")
                     raise
                 else:
-                    if self.sub_opts.verbose:
-                        print('HTCondor bash script file created in: {}'.format(cDir))
+                    if pars['verbose']:
+                        print(f"HTCondor bash script file created in: {cDir}")
 
                 # Make bash script executable
-                subprocess.run('chmod +x {}'.format(bashScriptPath),
-                               shell=True, check=True)
+                subprocess.run(f"chmod +x {bashScriptPath}", shell=True, check=True)
 
     def submit_jobs(self):
         for folder in self.condorDirs:
-            subFilePath = folder + str("/crawler.sub")
-            subprocess.run(
-                ['condor_submit -name sn-01.cr.cnaf.infn.it -spool {}'.format(subFilePath)], shell=True, check=True)
+            subFilePath = f"{folder}/cndr.sub"
+            subprocess.run([f"condor_submit -name sn-01.cr.cnaf.infn.it -spool {subFilePath}"], shell=True, check=True)
 
-    def collector_task(self, outScript, dataListPath, cDir):
-        tmpOutDir = cDir + str("/outFiles")
+    def collector_task(self, outScript: str, dataListPath: str, cDir: str, pars: dict):
+        tmpOutDir = f"{cDir}/outFiles"
         outScript.write("#!/usr/bin/env bash\n")
         outScript.write("source /cvmfs/dampe.cern.ch/centos7/etc/setup.sh\n")
         outScript.write("dampe_init trunk\n")
-        outScript.write('mkdir {}\n'.format(tmpOutDir))
-        if self.sub_opts.mc:
-            outScript.write('{} -w {} -i {} -d {} -m -v'.format(
-                self.sub_opts.executable,
-                self.sub_opts.config,
-                dataListPath,
-                tmpOutDir))
-        if self.sub_opts.data:
-            outScript.write('{} -w {} -i {} -d {} -r -v'.format(
-                self.sub_opts.executable,
-                self.sub_opts.config,
-                dataListPath,
-                tmpOutDir))
+        outScript.write(f"mkdir {tmpOutDir}\n")
+        _cmd = f"{pars['executable']} -w {pars['config']} -i {dataListPath} -d {tmpOutDir} -v "
+        _cmd += "-m" if pars['mc'] else "-r"
+        outScript.write(_cmd)
 
     def kompressor_task(self, outScript, dataListPath, cDir):
-        tmpOutDir = cDir + str("/outFiles")
+        '''
+        tmpOutDir = f"{cDir}/outFiles"
         ldpath = self.sub_opts.executable[:self.sub_opts.executable.rfind(
             'Kompressor/')+11] + "dylib"
         outScript.write("#!/usr/bin/env bash\n")
@@ -392,44 +301,46 @@ class dampe_helper():
         _command = f"{self.sub_opts.executable} -i {dataListPath} -d {tmpOutDir} -v {_opt_command}"
 
         outScript.write(_command)
+        '''
 
     def get_energy_bin(self, dataListPath):
         with open(dataListPath, "r") as _list:
             line = _list.readline()
         return line[line.rfind('_')+1:line.rfind('.root')]    
 
-    def aladin_task(self, outScript, dataListPath, cDir):
-        tmpOutDir = cDir + str("/outFiles")
-        ldpath = self.sub_opts.executable[:self.sub_opts.executable.rfind(
-            'Aladin/')+7] + "dylib"
+    def aladin_task(self, outScript: str, dataListPath: str, cDir: str, pars: dict):
+        tmpOutDir = f"{cDir}/outFiles"
+        ldpath = f"{pars['executable'][:pars['executable'].rfind('Aladin/')+7]}dylib"
         outScript.write("#!/usr/bin/env bash\n")
         outScript.write("source /opt/rh/devtoolset-7/enable\n")
-        outScript.write(
-            "source /storage/gpfs_data/dampe/users/ecatanzani/deps/root-6.22/bin/thisroot.sh\n")
+        outScript.write("source /storage/gpfs_data/dampe/users/ecatanzani/deps/root-6.22/bin/thisroot.sh\n")
         outScript.write(f"export LD_LIBRARY_PATH={ldpath}:$LD_LIBRARY_PATH\n")
         outScript.write(f"mkdir {tmpOutDir}\n")
         
         _opt_command = ""
-        if self.sub_opts.config:
-            _opt_command += f"-w {self.sub_opts.config} "
-        if self.sub_opts.mc:
+        if pars['config']:
+            _opt_command += f"-w {pars['config']} "
+        if pars['mc']:
             _opt_command += "-m "
-        if self.sub_opts.regularize:
-            _opt_command += f"-r {self.sub_opts.regularize} "
-        if self.sub_opts.gaussianize:
+        if pars['regularize']:
+            _opt_command += f"-r {pars['regularize']} "
+        if pars['gaussianize']:
             _opt_command += "-g "
-        if self.sub_opts.likelihood:
+        if pars['likelihood']:
             _opt_command += "-l "
             _opt_command += f"-b {self.get_energy_bin(dataListPath)} "
-        if self.sub_opts.fit:
+        if pars['fit']:
             _opt_command += "-f "
             _opt_command += f"-b {self.get_energy_bin(dataListPath)} "
+        if pars['tmva']:
+            _opt_command += f"-t {pars['tmva']}"
 
-        _command = f"{self.sub_opts.executable} -i {dataListPath} -d {tmpOutDir} -v {_opt_command}"
+        _command = f"{pars['executable']} -i {dataListPath} -d {tmpOutDir} -v {_opt_command}"
 
         outScript.write(_command)
 
     def split_task(self, outScript, dataListPath, cDir):
+        '''
         tmpOutDir = cDir + str("/outFiles")
         ldpath = self.sub_opts.executable[:self.sub_opts.executable.rfind(
             'Split/')+6] + "dylib"
@@ -449,8 +360,10 @@ class dampe_helper():
         _command = f"{self.sub_opts.executable} -i {dataListPath} -d {tmpOutDir} -v {_opt_command}"
 
         outScript.write(_command)
+        '''
 
     def acceptance_task(self, outScript, dataListPath, cDir):
+        '''
         tmpOutDir = cDir + str("/outFiles")
         outScript.write("#!/usr/bin/env bash\n")
         outScript.write("source /opt/rh/devtoolset-7/enable\n")
@@ -465,8 +378,10 @@ class dampe_helper():
         _command = f"{self.sub_opts.executable} -i {dataListPath} -d {tmpOutDir} -v {_opt_command}"
 
         outScript.write(_command)
+        '''
 
     def efficiency_task(self, outScript, dataListPath, cDir):
+        '''
         tmpOutDir = cDir + str("/outFiles")
         outScript.write("#!/usr/bin/env bash\n")
         outScript.write("source /opt/rh/devtoolset-7/enable\n")
@@ -483,51 +398,9 @@ class dampe_helper():
         _command = f"{self.sub_opts.executable} -i {dataListPath} -d {tmpOutDir} -v {_opt_command}"
 
         outScript.write(_command)
+        '''
 
-    def collector(self):
-        parser = ArgumentParser(
-            description='DAMPE all-electron collector facility')
-        parser.add_argument("-l", "--list", type=str,
-                            dest='list', help='Input DATA/MC list')
-        parser.add_argument("-c", "--config", type=str,
-                            dest='config', help='Software Config Directory')
-        parser.add_argument("-o", "--output", type=str,
-                            dest='output', help='HTC output directory')
-        parser.add_argument("-m", "--mc", dest='mc',
-                            default=False, action='store_true', help='MC event collector')
-        parser.add_argument("-d", "--data", dest='data',
-                            default=False, action='store_true', help='DATA event collector')
-        parser.add_argument("-t", "--time_ntuple", dest='time_ntuple',
-                            default=False, action='store_true', help='nTuple time ID')
-        parser.add_argument("-f", "--file", type=int, dest='file',
-                            const=100, nargs='?', help='files to process in job')
-        parser.add_argument("-x", "--executable", type=str,
-                            dest='executable', help='Analysis script')
-
-        parser.add_argument("-v", "--verbose", dest='verbose', default=False,
-                            action='store_true', help='run in high verbosity mode')
-        parser.add_argument("-r", "--recreate", dest='recreate', default=False,
-                            action='store_true', help='recreate output dirs if present')
-        parser.add_argument("-a", "--append", dest='append', default=False,
-                            action='store_true', help='append jobs folder to existing directory')
-        args = parser.parse_args(sys.argv[2:])
-        self.sub_opts = args
-
-        if self.sub_opts.time_ntuple:
-            self.extract_timing_info()
-            self.parse_timing_info()
-        else:
-            start_idx = 0
-            if self.sub_opts.append:
-                jobs_folder = [file for file in os.listdir(
-                    self.sub_opts.output) if file.startswith('job_')]
-                start_idx = max([int(file[file.rfind('_')+1:])
-                                 for file in jobs_folder])+1
-            self.parse_input_list(start_idx)
-        self.create_condor_files(
-            collector=True, kompressor=False, aladin=False, split=False, acceptance=False, efficiency=False, mt=False)
-        self.submit_jobs()
-
+'''
     def kompressor(self):
         parser = ArgumentParser(
             description='DAMPE Kompressor facility')
@@ -819,7 +692,4 @@ class dampe_helper():
                 print(_cmd)
             _cmd = f"hadd {_out_full_name}{_file_list}"
             subprocess.run(_cmd, shell=True, check=True)
-
-
-if __name__ == '__main__':
-    dampe_helper()
+'''
