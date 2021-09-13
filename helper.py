@@ -167,7 +167,7 @@ class helper():
                     ordered_list.append(file)
         self.data_files = ordered_list
 
-    def clean_condor_dir(self, dir):
+    def clean_condor_dir(self, dir: str):
         os.chdir(dir)
         outCondor = [filename for filename in os.listdir('.') if filename.startswith("out")]
         # Clean the job dir
@@ -178,8 +178,8 @@ class helper():
                 if os.path.isfile(elm):
                     os.remove(elm)
 
-    def resubmit_condor_jobs(self, skipped_dirs, verbose):
-        for dir in skipped_dirs:
+    def resubmit_condor_jobs(self, verbose: bool):
+        for dir in self.skipped_dirs:
             self.clean_condor_dir(dir)
 
             # Submit HTCondor job
@@ -400,7 +400,7 @@ class helper():
         outScript.write(_command)
         '''
 
-'''
+    '''
     def kompressor(self):
         parser = ArgumentParser(
             description='DAMPE Kompressor facility')
@@ -568,82 +568,56 @@ class helper():
         self.create_condor_files(
             collector=False, kompressor=False, aladin=False, split=False, acceptance=False, efficiency=True, mt=False)
         self.submit_jobs()
+    '''
 
-    def status(self):
-        parser = ArgumentParser(
-            description='DAMPE HTCondor Job Status Controller')
-        parser.add_argument("-i", "--input", type=str,
-                            dest='input', help='Input condor jobs WD')
-        parser.add_argument("-r", "--resubmit", dest='resubmit', default=False,
-                            action='store_true', help='HTCondor flag to resubmit failed jobs')
-        parser.add_argument("-e", "--erase", dest='erase', default=False,
-                            action='store_true', help='Remove ROOT files with no keys')
-        parser.add_argument("-l", "--list", dest='list', default=False,
-                            action='store_true', help='Produce file list')
-        parser.add_argument("-s", "--split", dest='split', default=False,
-                            action='store_true', help='Split file list by energy bin')
-        parser.add_argument("-v", "--verbose", dest='verbose', default=False,
-                            action='store_true', help='run in high verbosity mode')
-        args = parser.parse_args(sys.argv[2:])
-        self.sub_opts = args
-        self.getListOfFiles(self.sub_opts.input)
-
-        if self.sub_opts.verbose:
-            print('Found {} GOOD condor directories'.format(len(self.data_dirs)))
+    def status(self, pars: dict):
+        
+        self.getListOfFiles(pars['input'])
+        if pars['verbose']:
+            print(f"Found {len(self.data_dirs)} GOOD condor directories")
         if self.skipped_dirs:
-            print('Found {} BAD condor directories...\n'.format(
-                len(self.skipped_dirs)))
-            print('Found {} directories with no output folder'.format(
-                self.skipped_file_notFinalDir))
-            print('Found {} directories with inconsistent number of output ROOT files'.format(
-                self.skipped_file_notAllOutput))
-            print('Found {} directories with no output ROOT file'.format(
-                self.skipped_file_notROOTfile))
-            print('Found {} directories with corrupted output ROOT file'.format(
-                self.skipped_file_notReadable))
-            print('Found {} directories where output ROOT file has no keys\n'.format(
-                self.skipped_file_noKeys))
+            print(f"Found {len(self.skipped_dirs)} BAD condor directories...\n")
+            print(f"Found {self.skipped_file_notFinalDir} directories with no output folder")
+            print(f"Found {self.skipped_file_notAllOutput} directories with inconsistent number of output ROOT files")
+            print(f"Found {self.skipped_file_notROOTfile} directories with no output ROOT file")
+            print(f"Found {self.skipped_file_notReadable} directories with corrupted output ROOT file")
+            print(f"Found {self.skipped_file_noKeys} directories where output ROOT file has no keys\n")
             print('Here the folders list...\n')
 
             for idx, elm in enumerate(self.skipped_dirs):
-                print('Skipped {} directory: {}'.format(idx, elm))
+                print(f'Skipped directory [{idx+1}] : {elm}')    
 
-            if self.sub_opts.resubmit:
-                print('\nResubmitting HTCondor jobs for {} directories\n'.format(
-                    len(self.skipped_dirs)))
+            if pars['resubmit']:
+                print(f"\nResubmitting HTCondor jobs for {len(self.skipped_dirs)} directories\n")
                 for dir in self.skipped_dirs:
                     self.clean_condor_dir(dir)
-                self.resubmit_condor_jobs(
-                    self.skipped_dirs, self.sub_opts.verbose)
-        if self.sub_opts.list:
-            if self.sub_opts.split:
-                _single_job = [int(file[file.rfind('_')+1:file.rfind('.')])
-                               for file in self.data_files if "job_0" in file]
-                _single_job.sort()
-                energy_nbins = _single_job[-1]
-                _single_bin_lists = []
-                for bin_idx in range(1, energy_nbins+1):
-                    tmp_bin_files = [
-                        file for file in self.data_files if f"energybin_{bin_idx}.root" in file]
-                    _list_path = self.sub_opts.input[self.sub_opts.input.rfind(
-                        '/')+1:] + f"_energybin_{bin_idx}.txt"
-                    _single_bin_lists.append(f"{os.getcwd()}/{_list_path}")
+                self.resubmit_condor_jobs(pars['verbose'])
+        else:
+            if pars['list']:
+                if pars['split']:
+                    _single_job = [int(file[file.rfind('_')+1:file.rfind('.')]) for file in self.data_files if "job_0" in file]
+                    _single_job.sort()
+                    energy_nbins = _single_job[-1]
+                    _single_bin_lists = []
+                    for bin_idx in range(1, energy_nbins+1):
+                        tmp_bin_files = [
+                            file for file in self.data_files if f"energybin_{bin_idx}.root" in file]
+                        _list_path = self.sub_opts.input[self.sub_opts.input.rfind('/')+1:] + f"_energybin_{bin_idx}.txt"
+                        _single_bin_lists.append(f"{os.getcwd()}/{_list_path}")
+                        with open(_list_path, "w") as _final_list:
+                            for elm in tmp_bin_files:
+                                _final_list.write(f"{elm}\n")
+                    _list_path = self.sub_opts.input[self.sub_opts.input.rfind('/')+1:] + "_energybin_all_lists.txt"
                     with open(_list_path, "w") as _final_list:
-                        for elm in tmp_bin_files:
-                            _final_list.write(elm + "\n")
-                _list_path = self.sub_opts.input[self.sub_opts.input.rfind(
-                    '/')+1:] + "_energybin_all_lists.txt"
-                with open(_list_path, "w") as _final_list:
-                    for elm in _single_bin_lists:
-                        _final_list.write(elm + "\n")
+                        for elm in _single_bin_lists:
+                            _final_list.write(f"{elm}\n")
+                else:
+                    _list_path = self.sub_opts.input[self.sub_opts.input.rfind('/')+1:] + ".txt"
+                    with open(_list_path, "w") as _final_list:
+                        for elm in self.data_files:
+                            _final_list.write(f"{elm}\n")
 
-            else:
-                _list_path = self.sub_opts.input[self.sub_opts.input.rfind(
-                    '/')+1:] + ".txt"
-                with open(_list_path, "w") as _final_list:
-                    for elm in self.data_files:
-                        _final_list.write(elm + "\n")
-
+    '''
     def integral(self):
         parser = ArgumentParser(
             description='Add Kompressor out files')
