@@ -178,7 +178,7 @@ class helper():
                 if os.path.isfile(elm):
                     os.remove(elm)
 
-    def resubmit_condor_jobs(self, verbose: bool):
+    def resubmit_condor_jobs(self, verbose: bool, sub_file: str = "cndr.sub"):
         for dir in self.skipped_dirs:
             self.clean_condor_dir(dir)
 
@@ -186,7 +186,7 @@ class helper():
             if verbose:
                 print(f"Resubmitting job from folder: {dir}")
 
-            subprocess.run("condor_submit -name sn-01.cr.cnaf.infn.it -spool cndr.sub", shell=True, check=True)
+            subprocess.run(f"condor_submit -name sn-01.cr.cnaf.infn.it -spool {sub_file}", shell=True, check=True)
 
     def checkargs(self, task: dict) -> bool:
         if sum(task.values()) == 1:
@@ -591,7 +591,7 @@ class helper():
                 print(f"\nResubmitting HTCondor jobs for {len(self.skipped_dirs)} directories\n")
                 for dir in self.skipped_dirs:
                     self.clean_condor_dir(dir)
-                self.resubmit_condor_jobs(pars['verbose'])
+                self.resubmit_condor_jobs(pars['verbose'], pars['modify_sub_file'])
         else:
             if pars['list']:
                 if pars['split']:

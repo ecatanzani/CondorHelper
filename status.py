@@ -12,6 +12,8 @@ def main(args=None):
                             action='store_true', help='Produce file list')
     parser.add_argument("-s", "--split", dest='split', default=False,
                             action='store_true', help='Split file list by energy bin')
+    parser.add_argument("-m", "--modify_sub_file", type=str,
+                        dest='modify_sub_file', default="cndr.sub", help='HTCondor sub file name')
     parser.add_argument("-v", "--verbose", dest='verbose', default=False,
                         action='store_true', help='run in high verbosity mode')
 
@@ -23,6 +25,7 @@ def main(args=None):
         "resubmit": opts.resubmit,
         "list": opts.list,
         "split": opts.split,
+        "modify_sub_file": opts.modify_sub_file,
         "verbose": opts.verbose
     }
 
