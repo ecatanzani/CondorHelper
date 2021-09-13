@@ -1,7 +1,7 @@
 import os
 import shutil
 import subprocess
-
+from tqdm import tqdm
 class helper():
 
     def __init__(self):
@@ -109,7 +109,7 @@ class helper():
         from ROOT import TFile
 
         # Starting loop on output condor dirs
-        for tmp_dir in os.listdir(condor_wd):
+        for tmp_dir in tqdm(os.listdir(condor_wd), desc='Scanning local HTCondor dir'):
             if tmp_dir.startswith('job_'):
                 full_dir_path = f"{condor_wd}/{tmp_dir}"
                 expected_condor_outDir = f"{full_dir_path}/outFiles"
