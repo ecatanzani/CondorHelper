@@ -13,7 +13,7 @@ def main(args=None):
     parser.add_argument("-l", "--list", type=str,
                         dest='list', help='Input DATA/MC list')
     parser.add_argument("-c", "--config", type=str,
-                        dest='config', help='Software Config Directory')
+                        dest='config', help='Collector config directory')
     parser.add_argument("-o", "--output", type=str,
                         dest='output', help='HTC output directory')
     parser.add_argument("-m", "--mc", dest='mc',
@@ -27,7 +27,7 @@ def main(args=None):
     parser.add_argument("-t", "--fit", dest='fit', default=False,
                         action='store_true', help='fit analysis facility')
     parser.add_argument("-e", "--export_vars", type=str,
-                        dest='export_vars', help='TMVA variables facility')
+                        dest='export_vars', help='/path/to/labda/tree - TMVA variables facility')
     parser.add_argument("-f", "--file", type=int, dest='file',
                         const=10, nargs='?', help='files to process in job')
     parser.add_argument("-x", "--executable", type=str,
