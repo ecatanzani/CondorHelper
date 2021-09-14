@@ -602,17 +602,17 @@ class helper():
                     for bin_idx in range(1, energy_nbins+1):
                         tmp_bin_files = [
                             file for file in self.data_files if f"energybin_{bin_idx}.root" in file]
-                        _list_path = self.sub_opts.input[self.sub_opts.input.rfind('/')+1:] + f"_energybin_{bin_idx}.txt"
+                        _list_path = pars['input'][pars['input'].rfind('/')+1:] + f"_energybin_{bin_idx}.txt"
                         _single_bin_lists.append(f"{os.getcwd()}/{_list_path}")
                         with open(_list_path, "w") as _final_list:
                             for elm in tmp_bin_files:
                                 _final_list.write(f"{elm}\n")
-                    _list_path = self.sub_opts.input[self.sub_opts.input.rfind('/')+1:] + "_energybin_all_lists.txt"
+                    _list_path = pars['input'][pars['input'].rfind('/')+1:] + "_energybin_all_lists.txt"
                     with open(_list_path, "w") as _final_list:
                         for elm in _single_bin_lists:
                             _final_list.write(f"{elm}\n")
                 else:
-                    _list_path = self.sub_opts.input[self.sub_opts.input.rfind('/')+1:] + ".txt"
+                    _list_path = pars['input'][pars['input'].rfind('/')+1:] + ".txt"
                     with open(_list_path, "w") as _final_list:
                         for elm in self.data_files:
                             _final_list.write(f"{elm}\n")
