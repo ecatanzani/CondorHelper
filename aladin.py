@@ -19,7 +19,7 @@ def main(args=None):
     parser.add_argument("-m", "--mc", dest='mc',
                         default=False, action='store_true', help='MC event collector')
     parser.add_argument("-r", "--regularize", type=str,
-                        dest='regularize', help='BDT variables regularizer facility')
+                        dest='regularize', help='/path/to/regularized/tree - BDT variables regularizer facility')
     parser.add_argument("-g", "--gaussianize", dest='gaussianize', default=False,
                         action='store_true', help='BDT variables gaussianizer facility')
     parser.add_argument("-k", "--likelihood", dest='likelihood', default=False,
