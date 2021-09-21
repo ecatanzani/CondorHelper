@@ -268,40 +268,24 @@ class helper():
         _cmd += "-m" if pars['mc'] else "-r"
         outScript.write(_cmd)
 
-    def kompressor_task(self, outScript, dataListPath, cDir):
-        '''
+    def kompressor_task(self, outScript: str, dataListPath: str, cDir: str, pars: dict):
         tmpOutDir = f"{cDir}/outFiles"
-        ldpath = self.sub_opts.executable[:self.sub_opts.executable.rfind(
-            'Kompressor/')+11] + "dylib"
         outScript.write("#!/usr/bin/env bash\n")
         outScript.write("source /opt/rh/devtoolset-7/enable\n")
-        outScript.write(
-            "source /storage/gpfs_data/dampe/users/ecatanzani/deps/root-6.22/bin/thisroot.sh\n")
-        outScript.write(f"export LD_LIBRARY_PATH={ldpath}:$LD_LIBRARY_PATH\n")
+        outScript.write("source /storage/gpfs_data/dampe/users/ecatanzani/deps/root-6.22/bin/thisroot.sh\n")
         outScript.write(f"mkdir {tmpOutDir}\n")
 
         _opt_command = ""
-        if self.sub_opts.config:
-            _opt_command += f"-w {self.sub_opts.config} "
-        if self.sub_opts.mc:
+        if pars['config']:
+            _opt_command += f"-w {pars['config']} "
+        if pars['mc']:
             _opt_command += "-m "
-        if self.sub_opts.behaviour:
-            _opt_command += f"-r {self.sub_opts.behaviour} "
-        if self.sub_opts.gaussianize:
-            _opt_command += "-g "
-        if self.sub_opts.show_gaussianized:
-            _opt_command += "-s "
-        if self.sub_opts.tmva_set:
-            _opt_command += f"-t {self.sub_opts.tmva_set} "
-        if self.sub_opts.no_split:
-            _opt_command += f"-n {self.sub_opts.no_split}"
-        if self.sub_opts.likelihood:
-            _opt_command += "-l "
+        if pars['regularize']:
+            _opt_command += f"-r {pars['regularize']} "
 
-        _command = f"{self.sub_opts.executable} -i {dataListPath} -d {tmpOutDir} -v {_opt_command}"
+        _command = f"{pars['executable']} -i {dataListPath} -d {tmpOutDir} -v {_opt_command}"
 
         outScript.write(_command)
-        '''
 
     def get_energy_bin(self, dataListPath):
         with open(dataListPath, "r") as _list:
