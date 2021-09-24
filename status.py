@@ -18,7 +18,7 @@ def main(args=None):
                         action='store_true', help='run in high verbosity mode')
 
     opts = parser.parse_args(args)
-    aladin_helper = helper.helper()
+    status_helper = helper.helper()
 
     pars = {
         "input": opts.input,
@@ -29,7 +29,7 @@ def main(args=None):
         "verbose": opts.verbose
     }
 
-    aladin_helper.status(pars)
+    status_helper.status(pars)
 
 
 if __name__ == '__main__':
