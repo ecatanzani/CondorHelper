@@ -385,51 +385,6 @@ class helper():
         '''
 
     '''
-    def kompressor(self):
-        parser = ArgumentParser(
-            description='DAMPE Kompressor facility')
-        parser.add_argument("-l", "--list", type=str,
-                            dest='list', help='Input DATA/MC list')
-        parser.add_argument("-c", "--config", type=str,
-                            dest='config', help='Software Config Directory')
-        parser.add_argument("-o", "--output", type=str,
-                            dest='output', help='HTC output directory')
-        parser.add_argument("-m", "--mc", dest='mc',
-                            default=False, action='store_true', help='MC event collector')
-        parser.add_argument("-b", "--behaviour", type=str,
-                            dest='behaviour', help='BDT variables regularizer facility')
-        parser.add_argument("-g", "--gaussianize", dest='gaussianize', default=False,
-                            action='store_true', help='BDT variables gaussianizer facility')
-        parser.add_argument("-s", "--show_gaussianized", dest='show_gaussianized', default=False,
-                            action='store_true', help='Show gaussianized BDT variables')
-        parser.add_argument("-t", "--tmva_set", type=str,
-                            dest='tmva_set', help='Create TMVA Test/Training sets - s(signal)/b(background)')
-        parser.add_argument("-n", "--no_split", type=str,
-                            dest='no_split', help='Create a single Test/Training TMVA set')
-
-        parser.add_argument("-k", "--likelihood", dest='likelihood', default=False,
-                            action='store_true', help='likelihood analysis facility')
-
-        parser.add_argument("-f", "--file", type=int, dest='file',
-                            const=10, nargs='?', help='files to process in job')
-        parser.add_argument("-x", "--executable", type=str,
-                            dest='executable', help='Analysis script')
-        parser.add_argument("-v", "--verbose", dest='verbose', default=False,
-                            action='store_true', help='run in high verbosity mode')
-        parser.add_argument("-r", "--recreate", dest='recreate', default=False,
-                            action='store_true', help='recreate output dirs if present')
-
-        args = parser.parse_args(sys.argv[2:])
-        self.sub_opts = args
-
-        _recursive = False
-        if self.sub_opts.likelihood:
-            self.sub_opts.file = 1
-            _recursive = True
-        self.parse_input_list(start_idx=0, recursive=_recursive)
-        self.create_condor_files(
-            collector=False, kompressor=True, aladin=False, split=False, acceptance=False, efficiency=False, mt=False)
-        self.submit_jobs()
 
     def aladin(self):
         parser = ArgumentParser(
@@ -601,53 +556,34 @@ class helper():
                         for elm in self.data_files:
                             _final_list.write(f"{elm}\n")
 
-    '''
-    def integral(self):
-        parser = ArgumentParser(
-            description='Add Kompressor out files')
-        parser.add_argument("-i", "--input", type=str,
-                            dest='input', help='Input condor jobs WD')
-        parser.add_argument("-o", "--output", type=str,
-                            dest='output', help='output ROOT file')
-        parser.add_argument("-f", "--filter", type=str,
-                            dest='filter', help='File name filter')
-        parser.add_argument("-a", "--aladin", dest='aladin', default=False,
-                            action='store_true', help='integral for aladin facility')
-        parser.add_argument("-v", "--verbose", dest='verbose', default=False,
-                            action='store_true', help='run in high verbosity mode')
-
-        args = parser.parse_args(sys.argv[2:])
-        self.sub_opts = args
-
-        if self.sub_opts.verbose:
-            print("Scanning original data directory...")
-        self.getListOfFiles(self.sub_opts.input)
-        if self.sub_opts.filter:
-            self.cleanListOfFiles()
-        if self.sub_opts.aladin:
-            self.orderListOfFiles()
-
-        if self.sub_opts.verbose:
+    def aggregate(self, pars: dict):
+        if pars['verbose']:
             print(f"Going to add {len(self.data_files)} ROOT files...")
-
         _k_step = 10
         _file_list = str()
         _list_idx = 0
-        _tmp_out_name = self.sub_opts.output[:self.sub_opts.output.rfind('.')]
+        _tmp_out_name = pars['output'][:pars['output'].rfind('.')]
         for fidx, file in enumerate(self.data_files):
             _file_list += f" {file}"
             if (fidx+1) % _k_step == 0:
                 _out_full_name = f"{_tmp_out_name}_{_list_idx}.root"
                 _cmd = f"hadd {_out_full_name}{_file_list}"
-                if self.sub_opts.verbose:
+                if pars['verbose']:
                     print(_cmd)
                 subprocess.run(_cmd, shell=True, check=True)
                 _file_list = f" {_out_full_name}"
                 _list_idx += 1
         if _file_list:
             _out_full_name = f"{_tmp_out_name}_{_list_idx}.root"
-            if self.sub_opts.verbose:
+            if pars['verbose']:
                 print(_cmd)
             _cmd = f"hadd {_out_full_name}{_file_list}"
             subprocess.run(_cmd, shell=True, check=True)
-'''
+
+    def integral(self, pars: dict):
+        self.getListOfFiles(pars['input'])
+        if pars['filter']:
+            self.cleanListOfFiles()
+        if pars['bin_order']:
+            self.orderListOfFiles()
+        self.aggregate(pars)
