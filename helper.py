@@ -559,7 +559,7 @@ class helper():
     def aggregate(self, pars: dict):
         if pars['verbose']:
             print(f"Going to add {len(self.data_files)} ROOT files...")
-        _k_step = 10
+        _k_step = pars['number']
         _file_list = str()
         _list_idx = 0
         _tmp_out_name = pars['output'][:pars['output'].rfind('.')]

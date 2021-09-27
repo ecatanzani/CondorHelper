@@ -12,6 +12,8 @@ def main(args=None):
                             dest='filter', help='File name to add')
     parser.add_argument("-b", "--bin_order", dest='bin_order', default=False,
                             action='store_true', help='integral for aladin facility')
+    parser.add_argument("-n", "--number", type=int, dest='number',
+                            const=10, nargs='?', help='Number of files to add')
     parser.add_argument("-v", "--verbose", dest='verbose', default=False,
                         action='store_true', help='run in high verbosity mode')
 
@@ -23,6 +25,7 @@ def main(args=None):
         "output": opts.output,
         "filter": opts.filter,
         "bin_order": opts.bin_order,
+        "number": opts.number,
         "verbose": opts.verbose
     }
 
