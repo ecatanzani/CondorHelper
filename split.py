@@ -4,8 +4,8 @@ import argparse
 def main(args=None):
     parser = argparse.ArgumentParser(description='Aladin Split facility')
 
-    parser.add_argument("-i", "--input", type=str,
-                        dest='input', help='Input condor jobs WD')
+    parser.add_argument("-l", "--list", type=str,
+                        dest='list', help='Input gaussianized DATA/MC list')
     parser.add_argument("-c", "--config", type=str,
                             dest='config', help='Collector Config Directory')
     parser.add_argument("-o", "--output", type=str,
@@ -25,7 +25,7 @@ def main(args=None):
     aladinsplit_helper = helper.helper()
 
     pars = {
-        "input": opts.input,
+        "list": opts.list,
         "output": opts.output,
         "config": opts.config,
         "mc": opts.mc,
