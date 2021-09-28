@@ -323,28 +323,24 @@ class helper():
 
         outScript.write(_command)
 
-    def split_task(self, outScript, dataListPath, cDir):
-        '''
-        tmpOutDir = cDir + str("/outFiles")
-        ldpath = self.sub_opts.executable[:self.sub_opts.executable.rfind(
-            'Split/')+6] + "dylib"
+    def split_task(self, outScript: str, dataListPath: str, cDir: str, pars: dict):
+        tmpOutDir = f"{cDir}/outFiles"
+        ldpath = f"{pars['executable'][:pars['executable'].rfind('Split/')+6]}dylib"
         outScript.write("#!/usr/bin/env bash\n")
         outScript.write("source /opt/rh/devtoolset-7/enable\n")
-        outScript.write(
-            "source /storage/gpfs_data/dampe/users/ecatanzani/deps/root-6.22/bin/thisroot.sh\n")
+        outScript.write("source /storage/gpfs_data/dampe/users/ecatanzani/deps/root-6.22/bin/thisroot.sh\n")
         outScript.write(f"export LD_LIBRARY_PATH={ldpath}:$LD_LIBRARY_PATH\n")
         outScript.write(f"mkdir {tmpOutDir}\n")
 
         _opt_command = ""
-        if self.sub_opts.config:
-            _opt_command += f"-w {self.sub_opts.config} "
-        if self.sub_opts.mc:
+        if pars['config']:
+            _opt_command += f"-w {pars['config']} "
+        if pars['mc']:
             _opt_command += "-m "
 
-        _command = f"{self.sub_opts.executable} -i {dataListPath} -d {tmpOutDir} -v {_opt_command}"
+        _command = f"{pars['executable']} -i {dataListPath} -d {tmpOutDir} -v {_opt_command}"
 
         outScript.write(_command)
-        '''
 
     def acceptance_task(self, outScript, dataListPath, cDir):
         '''
@@ -385,74 +381,6 @@ class helper():
         '''
 
     '''
-
-    def aladin(self):
-        parser = ArgumentParser(
-            description='DAMPE Aladin facility')
-        parser.add_argument("-l", "--list", type=str,
-                            dest='list', help='Input DATA/MC list')
-        parser.add_argument("-c", "--config", type=str,
-                            dest='config', help='Software Config Directory')
-        parser.add_argument("-o", "--output", type=str,
-                            dest='output', help='HTC output directory')
-        parser.add_argument("-m", "--mc", dest='mc',
-                            default=False, action='store_true', help='MC event collector')
-        parser.add_argument("-r", "--regularize", type=str,
-                            dest='regularize', help='BDT variables regularizer facility')
-        parser.add_argument("-g", "--gaussianize", dest='gaussianize', default=False,
-                            action='store_true', help='BDT variables gaussianizer facility')
-        parser.add_argument("-k", "--likelihood", dest='likelihood', default=False,
-                            action='store_true', help='likelihood analysis facility')
-        parser.add_argument("-t", "--fit", dest='fit', default=False,
-                            action='store_true', help='fit analysis facility')
-        parser.add_argument("-f", "--file", type=int, dest='file',
-                            const=10, nargs='?', help='files to process in job')
-        parser.add_argument("-x", "--executable", type=str,
-                            dest='executable', help='Analysis script')
-        parser.add_argument("-v", "--verbose", dest='verbose', default=False,
-                            action='store_true', help='run in high verbosity mode')
-        parser.add_argument("-n", "--new", dest='new', default=False,
-                            action='store_true', help='recreate output dirs if present')
-
-        args = parser.parse_args(sys.argv[2:])
-        self.sub_opts = args
-
-        _recursive = False
-        if self.sub_opts.likelihood or self.sub_opts.fit:
-            self.sub_opts.file = 1
-            _recursive = True
-        self.parse_input_list(start_idx=0, recursive=_recursive)
-        self.create_condor_files(
-            collector=False, kompressor=False, aladin=True, split=False, acceptance=False, efficiency=False, mt=False)
-        self.submit_jobs()
-
-    def split(self):
-        parser = ArgumentParser(
-            description='DAMPE Split facility')
-        parser.add_argument("-l", "--list", type=str,
-                            dest='list', help='Input DATA/MC list')
-        parser.add_argument("-c", "--config", type=str,
-                            dest='config', help='Software Config Directory')
-        parser.add_argument("-o", "--output", type=str,
-                            dest='output', help='HTC output directory')
-        parser.add_argument("-m", "--mc", dest='mc',
-                            default=False, action='store_true', help='MC event collector')
-        parser.add_argument("-f", "--file", type=int, dest='file',
-                            const=10, nargs='?', help='files to process in job')
-        parser.add_argument("-x", "--executable", type=str,
-                            dest='executable', help='Analysis script')
-        parser.add_argument("-v", "--verbose", dest='verbose', default=False,
-                            action='store_true', help='run in high verbosity mode')
-        parser.add_argument("-r", "--recreate", dest='recreate', default=False,
-                            action='store_true', help='recreate output dirs if present')
-
-        args = parser.parse_args(sys.argv[2:])
-        self.sub_opts = args
-
-        self.parse_input_list(start_idx=0)
-        self.create_condor_files(
-            collector=False, kompressor=False, aladin=False, split=True, acceptance=False, efficiency=False, mt=False)
-        self.submit_jobs()
 
     def acceptance(self):
         parser = ArgumentParser(
