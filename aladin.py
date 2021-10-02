@@ -52,6 +52,7 @@ def main(args=None):
         "likelihood": opts.likelihood,
         "fit": opts.fit,
         "tmva": opts.export_vars,
+        "aladin_tmva": False,
         "files": opts.file,
         "executable": opts.executable,
         "verbose": opts.verbose,

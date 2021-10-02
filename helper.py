@@ -293,8 +293,14 @@ class helper():
         return line[line.rfind('_')+1:line.rfind('.root')]    
 
     def aladin_task(self, outScript: str, dataListPath: str, cDir: str, pars: dict):
+        if not pars['aladin_tmva']:
+            self.aladin_plain_task(outScript, dataListPath, cDir, pars)
+        else:
+            self.aladin_tmva_task(outScript, dataListPath, cDir, pars)
+
+    def aladin_plain_task(self, outScript: str, dataListPath: str, cDir: str, pars: dict):
         tmpOutDir = f"{cDir}/outFiles"
-        ldpath = f"{pars['executable'][:pars['executable'].rfind('Aladin/')+7]}dylib"
+        ldpath = f"{pars['executable'][:pars['executable'].rfind('CreateSets/')+11]}dylib" 
         outScript.write("#!/usr/bin/env bash\n")
         outScript.write("source /opt/rh/devtoolset-7/enable\n")
         outScript.write("source /storage/gpfs_data/dampe/users/ecatanzani/deps/root-6.22/bin/thisroot.sh\n")
@@ -318,6 +324,25 @@ class helper():
             _opt_command += f"-b {self.get_energy_bin(dataListPath)} "
         if pars['tmva']:
             _opt_command += f"-t {pars['tmva']}"
+
+        _command = f"{pars['executable']} -i {dataListPath} -d {tmpOutDir} -v {_opt_command}"
+
+        outScript.write(_command)
+
+    def aladin_tmva_task(self, outScript: str, dataListPath: str, cDir: str, pars: dict):
+        tmpOutDir = f"{cDir}/outFiles"
+        ldpath = f"{pars['executable'][:pars['executable'].rfind('Aladin/')+7]}dylib" 
+        outScript.write("#!/usr/bin/env bash\n")
+        outScript.write("source /opt/rh/devtoolset-7/enable\n")
+        outScript.write("source /storage/gpfs_data/dampe/users/ecatanzani/deps/root-6.22/bin/thisroot.sh\n")
+        outScript.write(f"export LD_LIBRARY_PATH={ldpath}:$LD_LIBRARY_PATH\n")
+        outScript.write(f"mkdir {tmpOutDir}\n")
+        
+        _opt_command = ""
+        if pars['config']:
+            _opt_command += f"-w {pars['config']} "
+        if not pars['split']:
+            _opt_command += "-n "   
 
         _command = f"{pars['executable']} -i {dataListPath} -d {tmpOutDir} -v {_opt_command}"
 
