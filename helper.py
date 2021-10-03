@@ -300,7 +300,7 @@ class helper():
 
     def aladin_plain_task(self, outScript: str, dataListPath: str, cDir: str, pars: dict):
         tmpOutDir = f"{cDir}/outFiles"
-        ldpath = f"{pars['executable'][:pars['executable'].rfind('CreateSets/')+11]}dylib" 
+        ldpath = f"{pars['executable'][:pars['executable'].rfind('Aladin/')+7]}dylib"
         outScript.write("#!/usr/bin/env bash\n")
         outScript.write("source /opt/rh/devtoolset-7/enable\n")
         outScript.write("source /storage/gpfs_data/dampe/users/ecatanzani/deps/root-6.22/bin/thisroot.sh\n")
@@ -331,7 +331,8 @@ class helper():
 
     def aladin_tmva_task(self, outScript: str, dataListPath: str, cDir: str, pars: dict):
         tmpOutDir = f"{cDir}/outFiles"
-        ldpath = f"{pars['executable'][:pars['executable'].rfind('Aladin/')+7]}dylib" 
+        ldpath = f"{pars['executable'][:pars['executable'].rfind('CreateSets/')+11]}dylib"
+        outScript.write("#!/usr/bin/env bash\n")
         outScript.write("#!/usr/bin/env bash\n")
         outScript.write("source /opt/rh/devtoolset-7/enable\n")
         outScript.write("source /storage/gpfs_data/dampe/users/ecatanzani/deps/root-6.22/bin/thisroot.sh\n")
