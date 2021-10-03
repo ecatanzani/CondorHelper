@@ -154,9 +154,9 @@ class helper():
                     self.skipped_dirs.append(full_dir_path)
                     self.skipped_file_notFinalDir += 1
 
-    def cleanListOfFiles(self):
+    def cleanListOfFiles(self, pars: dict):
         for file in self.data_files:
-            if self.sub_opts.filter not in file:
+            if pars['filter'] not in file:
                 self.data_files.remove(file)
 
     def orderListOfFiles(self):
@@ -536,7 +536,7 @@ class helper():
     def integral(self, pars: dict):
         self.getListOfFiles(pars['input'])
         if pars['filter']:
-            self.cleanListOfFiles()
+            self.cleanListOfFiles(pars)
         if pars['bin_order']:
             self.orderListOfFiles()
         self.aggregate(pars)
