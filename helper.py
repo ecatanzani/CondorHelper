@@ -529,9 +529,9 @@ class helper():
                 _list_idx += 1
         if _file_list:
             _out_full_name = f"{_tmp_out_name}_{_list_idx}.root"
+            _cmd = f"hadd {_out_full_name}{_file_list}"
             if pars['verbose']:
                 print(_cmd)
-            _cmd = f"hadd {_out_full_name}{_file_list}"
             subprocess.run(_cmd, shell=True, check=True)
 
     def integral(self, pars: dict):
