@@ -156,7 +156,7 @@ class helper():
 
     def cleanListOfFiles(self, pars: dict):
         for file in self.data_files:
-            if pars['filter'] not in file:
+            if pars['filter'] not in file[file.rfind('/')+1:]:
                 self.data_files.remove(file)
 
     def orderListOfFiles(self):
