@@ -17,26 +17,30 @@ class helper():
         self.skipped_file_noKeys = 0
         self.ntuples_file_size = 6
 
+    def get_data_list(self, dataListPath):
+        with open(dataListPath, "r") as _list:
+            lines = _list.read().splitlines().shuffle()
+        return lines
+
     def parse_input_list(self, pars: dict, start_idx: int = 0, recursive: bool = False):
         out_dir = pars['output']
-        with open(pars['list'], 'r') as inputList:
-            list_idx = start_idx
-            data_list = []
-            for file_name in inputList:
-                if not file_name.startswith('.'):
-                    data_list.append(file_name.rstrip('\n'))
-                    if len(data_list) == pars['files']:
-                        _dir_data = self.write_list_to_file(data_list, f"{out_dir}/job_{list_idx}", recursive, pars['recreate'], pars['verbose'])
-                        if _dir_data[0]:
-                            self.condorDirs.append(_dir_data[1])
-                        list_idx += 1
-                        data_list.clear()
-            if data_list:
-                _dir_data = self.write_list_to_file(data_list, f"{out_dir}/job_{list_idx}", recursive, pars['recreate'], pars['verbose'])
-                if _dir_data[0]:
-                    self.condorDirs.append(_dir_data[1])
-                list_idx += 1
-                data_list.clear()
+        list_idx = start_idx
+        data_list = []
+        for file_name in self.get_data_list(pars['list']):
+            if not file_name.startswith('.'):
+                data_list.append(file_name.rstrip('\n'))
+                if len(data_list) == pars['files']:
+                    _dir_data = self.write_list_to_file(data_list, f"{out_dir}/job_{list_idx}", recursive, pars['recreate'], pars['verbose'])
+                    if _dir_data[0]:
+                        self.condorDirs.append(_dir_data[1])
+                    list_idx += 1
+                    data_list.clear()
+        if data_list:
+            _dir_data = self.write_list_to_file(data_list, f"{out_dir}/job_{list_idx}", recursive, pars['recreate'], pars['verbose'])
+            if _dir_data[0]:
+                self.condorDirs.append(_dir_data[1])
+            list_idx += 1
+            data_list.clear()
 
     def write_list_to_file(self, data_list: list, tmp_dir_name: str, recursive: bool = False, recreate: bool = False, verbose: bool = True) -> tuple:
         good_dir = False
@@ -432,34 +436,6 @@ class helper():
         self.parse_input_list(start_idx=0, recursive=False)
         self.create_condor_files(
             collector=False, kompressor=False, aladin=False, split=False, acceptance=True, efficiency=False, mt=False)
-        self.submit_jobs()
-
-    def efficiency(self):
-        parser = ArgumentParser(
-            description='DAMPE Efficiency facility')
-        parser.add_argument("-l", "--list", type=str,
-                            dest='list', help='Input MC list')
-        parser.add_argument("-c", "--config", type=str,
-                            dest='config', help='Software Config Directory')
-        parser.add_argument("-o", "--output", type=str,
-                            dest='output', help='HTC output directory')
-        parser.add_argument("-m", "--mc", dest='mc',
-                            default=False, action='store_true', help='MC event collector')
-        parser.add_argument("-f", "--file", type=int, dest='file',
-                            const=10, nargs='?', help='files to process in job')
-        parser.add_argument("-x", "--executable", type=str,
-                            dest='executable', help='Analysis script')
-        parser.add_argument("-v", "--verbose", dest='verbose', default=False,
-                            action='store_true', help='run in high verbosity mode')
-        parser.add_argument("-n", "--new", dest='new', default=False,
-                            action='store_true', help='recreate output dirs if present')
-
-        args = parser.parse_args(sys.argv[2:])
-        self.sub_opts = args
-       
-        self.parse_input_list(start_idx=0, recursive=False)
-        self.create_condor_files(
-            collector=False, kompressor=False, aladin=False, split=False, acceptance=False, efficiency=True, mt=False)
         self.submit_jobs()
     '''
 
