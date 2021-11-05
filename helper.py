@@ -1,4 +1,5 @@
 import os
+import random
 import shutil
 import subprocess
 from tqdm import tqdm
@@ -19,7 +20,8 @@ class helper():
 
     def get_data_list(self, dataListPath):
         with open(dataListPath, "r") as _list:
-            lines = _list.read().splitlines().shuffle()
+            lines = _list.read().splitlines()
+        random.shuffle(lines)
         return lines
 
     def parse_input_list(self, pars: dict, start_idx: int = 0, recursive: bool = False):
