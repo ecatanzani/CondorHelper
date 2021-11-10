@@ -159,6 +159,56 @@ class helper():
                     # 'outFiles' dir does not exists
                     self.skipped_dirs.append(full_dir_path)
                     self.skipped_file_notFinalDir += 1
+    
+    def getPartialListOfFiles(self, condor_wd: str):
+        from ROOT import TFile
+
+        # Starting loop on output condor dirs
+        for tmp_dir in tqdm(os.listdir(condor_wd), desc='Scanning local HTCondor dir'):
+            if tmp_dir.startswith('job_'):
+                full_dir_path = f"{condor_wd}/{tmp_dir}"
+                if "output.log" in os.listdir(full_dir_path):
+                    expected_condor_outDir = f"{full_dir_path}/outFiles"
+                    # Check if 'outFiles' dir exists
+                    if os.path.isdir(expected_condor_outDir):
+                        _list_dir = [f"{expected_condor_outDir}/{file}" for file in os.listdir(expected_condor_outDir) if file.endswith('.root')]
+                        skipped_dir = False
+                        for file_idx, tmp_acc_full_path in enumerate(_list_dir):
+                            # Check if output ROOT file exists
+                            if os.path.isfile(tmp_acc_full_path):
+                                # Check if output ROOT file is redable
+                                if self.TestROOTFile(tmp_acc_full_path):
+                                    tmp_acc_file = TFile.Open(tmp_acc_full_path, "READ")
+                                    # Check if output ROOT file is redable
+                                    if tmp_acc_file.IsOpen():
+                                        # Check if output ROOT file has keys
+                                        outKeys = tmp_acc_file.GetNkeys()
+                                        if outKeys:
+                                            if file_idx == len(_list_dir)-1 and not skipped_dir:
+                                                self.data_dirs.append(full_dir_path)
+                                            self.data_files.append(tmp_acc_full_path)
+                                        else:
+                                            # output ROOT file has been open but has not keys
+                                            if not skipped_dir:
+                                                self.skipped_dirs.append(full_dir_path)
+                                                skipped_dir = True
+                                            self.skipped_file_noKeys += 1
+                                else:
+                                    # output ROOT file has not been opened correctly
+                                    if not skipped_dir:
+                                        self.skipped_dirs.append(full_dir_path)
+                                        skipped_dir = True
+                                    self.skipped_file_notReadable += 1
+                            else:
+                                # output ROOT file does not exist
+                                if not skipped_dir:
+                                    self.skipped_dirs.append(full_dir_path)
+                                    skipped_dir = True
+                                self.skipped_file_notROOTfile += 1
+                    else:
+                        # 'outFiles' dir does not exists
+                        self.skipped_dirs.append(full_dir_path)
+                        self.skipped_file_notFinalDir += 1
 
     def cleanListOfFiles(self, pars: dict):
         for file in self.data_files:
@@ -514,6 +564,14 @@ class helper():
 
     def integral(self, pars: dict):
         self.getListOfFiles(pars['input'])
+        if pars['filter']:
+            self.cleanListOfFiles(pars)
+        if pars['bin_order']:
+            self.orderListOfFiles()
+        self.aggregate(pars)
+
+    def integral_partial(self, pars: dict):
+        self.getPartialListOfFiles(pars['input'])
         if pars['filter']:
             self.cleanListOfFiles(pars)
         if pars['bin_order']:
