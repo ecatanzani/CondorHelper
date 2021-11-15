@@ -313,7 +313,8 @@ class helper():
     def submit_jobs(self):
         for folder in self.condorDirs:
             subFilePath = f"{folder}/cndr.sub"
-            subprocess.run([f"condor_submit -name sn-01.cr.cnaf.infn.it -spool {subFilePath}"], shell=True, check=True)
+            #subprocess.run([f"condor_submit -name sn-01.cr.cnaf.infn.it -spool {subFilePath}"], shell=True, check=True)
+            subprocess.run([f"condor_submit -name sn-02.cr.cnaf.infn.it -spool {subFilePath}"], shell=True, check=True)
 
     def collector_task(self, outScript: str, dataListPath: str, cDir: str, pars: dict):
         tmpOutDir = f"{cDir}/outFiles"
