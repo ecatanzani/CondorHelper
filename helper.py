@@ -242,7 +242,8 @@ class helper():
             if verbose:
                 print(f"Resubmitting job from folder: {dir}")
 
-            subprocess.run(f"condor_submit -name sn-01.cr.cnaf.infn.it -spool {sub_file}", shell=True, check=True)
+            #subprocess.run(f"condor_submit -name sn-01.cr.cnaf.infn.it -spool {sub_file}", shell=True, check=True)
+            subprocess.run(f"condor_submit -name sn-02.cr.cnaf.infn.it -spool {sub_file}", shell=True, check=True)
 
     def checkargs(self, task: dict) -> bool:
         if sum(task.values()) == 1:
