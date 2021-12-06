@@ -9,8 +9,6 @@ def main(args=None):
                         dest='config', help='Collector Config Directory')
     parser.add_argument("-o", "--output", type=str,
                         dest='output', help='HTC output directory')
-    parser.add_argument("-m", "--mc", dest='mc',
-                        default=False, action='store_true', help='MC event collector')
     parser.add_argument("-f", "--file", type=int, dest='file',
                         const=10, nargs='?', help='files to process in job')
     parser.add_argument("-x", "--executable", type=str,
@@ -27,7 +25,6 @@ def main(args=None):
         "list": opts.list,
         "output": opts.output,
         "config": opts.config,
-        "mc": opts.mc,
         "files": opts.file,
         "executable": opts.executable,
         "verbose": opts.verbose,
