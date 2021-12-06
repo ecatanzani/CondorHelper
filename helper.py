@@ -426,23 +426,22 @@ class helper():
 
         outScript.write(_command)
 
-    def acceptance_task(self, outScript, dataListPath, cDir):
-        '''
-        tmpOutDir = cDir + str("/outFiles")
+    def acceptance_task(self, outScript: str, dataListPath: str, cDir: str, pars: dict):
+        
+        tmpOutDir = f"{cDir}/outFiles"
         outScript.write("#!/usr/bin/env bash\n")
         outScript.write("source /opt/rh/devtoolset-7/enable\n")
-        outScript.write(
-            "source /storage/gpfs_data/dampe/users/ecatanzani/deps/root-6.22/bin/thisroot.sh\n")
+        outScript.write("source /storage/gpfs_data/dampe/users/ecatanzani/deps/root-6.22/bin/thisroot.sh\n")
         outScript.write(f"mkdir {tmpOutDir}\n")
         
         _opt_command = ""
-        if self.sub_opts.config:
-            _opt_command += f"-w {self.sub_opts.config} "
+        if pars['config']:
+            _opt_command += f"-w {pars['config']} "
 
-        _command = f"{self.sub_opts.executable} -i {dataListPath} -d {tmpOutDir} -v {_opt_command}"
+        _command = f"{pars['executable']} -i {dataListPath} -d {tmpOutDir} -v {_opt_command}"
 
         outScript.write(_command)
-        '''
+        
 
     def efficiency_task(self, outScript: str, dataListPath: str, cDir: str, pars: dict):
         
