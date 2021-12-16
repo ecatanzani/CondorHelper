@@ -48,7 +48,8 @@ def main(args=None):
         "aladin": False, 
         "split": False, 
         "acceptance": False, 
-        "efficiency": False
+        "efficiency": False,
+        "signal_selection": False
     }
 
     start_idx = get_folder_index(opts.output) if opts.append else 0

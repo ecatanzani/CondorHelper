@@ -40,7 +40,8 @@ def main(args=None):
         "aladin": False, 
         "split": False, 
         "acceptance": False, 
-        "efficiency": True
+        "efficiency": True,
+        "signal_selection": False
     }
 
     efficiency_helper.parse_input_list(pars, start_idx=0)

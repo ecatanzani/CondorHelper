@@ -290,16 +290,18 @@ class helper():
                     with open(bashScriptPath, "w") as outScript:
                         if task['collector']:
                             self.collector_task(outScript, dataListPath, cDir, pars)
-                        if task['kompressor']:
+                        elif task['kompressor']:
                             self.kompressor_task(outScript, dataListPath, cDir, pars)
-                        if task['aladin']:
+                        elif task['aladin']:
                             self.aladin_task(outScript, dataListPath, cDir, pars)
-                        if task['split']:
+                        elif task['split']:
                             self.split_task(outScript, dataListPath, cDir, pars)
-                        if task['acceptance']:
+                        elif task['acceptance']:
                             self.acceptance_task(outScript, dataListPath, cDir, pars)
-                        if task['efficiency']:
+                        elif task['efficiency']:
                             self.efficiency_task(outScript, dataListPath, cDir, pars)
+                        elif task['signal_selection']:
+                            self.signal_selection_task(outScript, dataListPath, cDir, pars)
                 except OSError:
                     print(f"ERROR creating HTCondor bash script file in: {cDir}")
                     raise
@@ -448,8 +450,7 @@ class helper():
         tmpOutDir = f"{cDir}/outFiles"
         outScript.write("#!/usr/bin/env bash\n")
         outScript.write("source /opt/rh/devtoolset-7/enable\n")
-        outScript.write(
-            "source /storage/gpfs_data/dampe/users/ecatanzani/deps/root-6.22/bin/thisroot.sh\n")
+        outScript.write("source /storage/gpfs_data/dampe/users/ecatanzani/deps/root-6.22/bin/thisroot.sh\n")
         outScript.write(f"mkdir {tmpOutDir}\n")
         
         _opt_command = ""
@@ -463,34 +464,23 @@ class helper():
         outScript.write(_command)
         
 
-    '''
+    def signal_selection_task(self, outScript: str, dataListPath: str, cDir: str, pars: dict):
+        
+        tmpOutDir = f"{cDir}/outFiles"
+        outScript.write("#!/usr/bin/env bash\n")
+        outScript.write("source /opt/rh/devtoolset-7/enable\n")
+        outScript.write("source /storage/gpfs_data/dampe/users/ecatanzani/deps/root-6.22/bin/thisroot.sh\n")
+        outScript.write(f"mkdir {tmpOutDir}\n")
+        
+        _opt_command = ""
+        if pars['config']:
+            _opt_command += f"-c {pars['config']} "
+        if pars['lm']:
+            _opt_command += f"-m {pars['lm']} "
 
-    def acceptance(self):
-        parser = ArgumentParser(
-            description='DAMPE Acceptance facility')
-        parser.add_argument("-l", "--list", type=str,
-                            dest='list', help='Input MC list')
-        parser.add_argument("-c", "--config", type=str,
-                            dest='config', help='Software Config Directory')
-        parser.add_argument("-o", "--output", type=str,
-                            dest='output', help='HTC output directory')
-        parser.add_argument("-f", "--file", type=int, dest='file',
-                            const=10, nargs='?', help='files to process in job')
-        parser.add_argument("-x", "--executable", type=str,
-                            dest='executable', help='Analysis script')
-        parser.add_argument("-v", "--verbose", dest='verbose', default=False,
-                            action='store_true', help='run in high verbosity mode')
-        parser.add_argument("-n", "--new", dest='new', default=False,
-                            action='store_true', help='recreate output dirs if present')
+        _command = f"{pars['executable']} -i {dataListPath} -d {tmpOutDir} -v {_opt_command}"
 
-        args = parser.parse_args(sys.argv[2:])
-        self.sub_opts = args
-       
-        self.parse_input_list(start_idx=0, recursive=False)
-        self.create_condor_files(
-            collector=False, kompressor=False, aladin=False, split=False, acceptance=True, efficiency=False, mt=False)
-        self.submit_jobs()
-    '''
+        outScript.write(_command)
 
     def status(self, pars: dict):
         

@@ -1,14 +1,19 @@
 import helper
 import argparse
 
+import helper
+import argparse
+
 def main(args=None):
-    parser = argparse.ArgumentParser(description='DAMPE Acceptance facility')
+    parser = argparse.ArgumentParser(description='DAMPE electron-selection facility')
     parser.add_argument("-l", "--list", type=str,
                         dest='list', help='Input MC list')
     parser.add_argument("-c", "--config", type=str,
                         dest='config', help='Collector Config Directory')
     parser.add_argument("-o", "--output", type=str,
                         dest='output', help='HTC output directory')
+    parser.add_argument("-m", "--learning_method", dest='lm',
+                        default=False, action='store_true', help='TMVA learning method')
     parser.add_argument("-f", "--file", type=int, dest='file',
                         const=10, nargs='?', help='files to process in job')
     parser.add_argument("-x", "--executable", type=str,
@@ -19,12 +24,13 @@ def main(args=None):
                         action='store_true', help='recreate output dirs if present')
 
     opts = parser.parse_args(args)
-    acceptance_helper = helper.helper()
+    efficiency_helper = helper.helper()
 
     pars = {
         "list": opts.list,
         "output": opts.output,
         "config": opts.config,
+        "lm": opts.lm,
         "files": opts.file,
         "executable": opts.executable,
         "verbose": opts.verbose,
@@ -36,14 +42,14 @@ def main(args=None):
         "kompressor": False, 
         "aladin": False, 
         "split": False, 
-        "acceptance": True, 
+        "acceptance": False, 
         "efficiency": False,
-        "signal_selection": False
+        "signal_selection": True
     }
 
-    acceptance_helper.parse_input_list(pars, start_idx=0)
-    acceptance_helper.create_condor_files(pars, task)
-    acceptance_helper.submit_jobs()
+    efficiency_helper.parse_input_list(pars, start_idx=0)
+    efficiency_helper.create_condor_files(pars, task)
+    efficiency_helper.submit_jobs()
 
 if __name__ == '__main__':
     main()
