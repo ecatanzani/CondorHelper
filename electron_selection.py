@@ -24,7 +24,7 @@ def main(args=None):
                         action='store_true', help='recreate output dirs if present')
 
     opts = parser.parse_args(args)
-    efficiency_helper = helper.helper()
+    signal_selection_helper = helper.helper()
 
     pars = {
         "list": opts.list,
@@ -47,9 +47,9 @@ def main(args=None):
         "signal_selection": True
     }
 
-    efficiency_helper.parse_input_list(pars, start_idx=0)
-    efficiency_helper.create_condor_files(pars, task)
-    efficiency_helper.submit_jobs()
+    signal_selection_helper.parse_input_list(pars, start_idx=0)
+    signal_selection_helper.create_condor_files(pars, task)
+    signal_selection_helper.submit_jobs()
 
 if __name__ == '__main__':
     main()
