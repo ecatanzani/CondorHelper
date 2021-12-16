@@ -12,8 +12,8 @@ def main(args=None):
                         dest='config', help='Collector Config Directory')
     parser.add_argument("-o", "--output", type=str,
                         dest='output', help='HTC output directory')
-    parser.add_argument("-m", "--learning_method", dest='lm',
-                        default=False, action='store_true', help='TMVA learning method')
+    parser.add_argument("-m", "--learning_method", type=str,
+                        dest='config', help='TMVA learning method')
     parser.add_argument("-f", "--file", type=int, dest='file',
                         const=10, nargs='?', help='files to process in job')
     parser.add_argument("-x", "--executable", type=str,
