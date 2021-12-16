@@ -3,7 +3,7 @@
 #_NODE_NAME="sn-01.cr.cnaf.infn.it"
 _NODE_NAME="sn-02.cr.cnaf.infn.it"
 
-source /usr/share/htc/condor/9/enable
+#source /usr/share/htc/condor/9/enable
 
 function fetchData() { condor_transfer_data -name ${_NODE_NAME} $1; }
 function removeJob() { condor_rm -name ${_NODE_NAME} $1; }
