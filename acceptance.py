@@ -38,7 +38,8 @@ def main(args=None):
         "split": False, 
         "acceptance": True, 
         "efficiency": False,
-        "signal_selection": False
+        "signal_selection": False,
+        "xtrl": False
     }
 
     acceptance_helper.parse_input_list(pars, start_idx=0)

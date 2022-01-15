@@ -42,7 +42,8 @@ def main(args=None):
         "split": True, 
         "acceptance": False, 
         "efficiency": False,
-        "signal_selection": False
+        "signal_selection": False,
+        "xtrl": False
     }
 
     aladinsplit_helper.parse_input_list(pars, start_idx=0)

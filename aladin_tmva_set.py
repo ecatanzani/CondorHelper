@@ -43,7 +43,8 @@ def main(args=None):
         "split": False, 
         "acceptance": False, 
         "efficiency": False,
-        "signal_selection": False
+        "signal_selection": False,
+        "xtrl": False
     }
 
     aladin_tmva_helper.parse_input_list(pars, start_idx=0)

@@ -49,7 +49,8 @@ def main(args=None):
         "split": False, 
         "acceptance": False, 
         "efficiency": False,
-        "signal_selection": False
+        "signal_selection": False,
+        "xtrl": False
     }
 
     start_idx = get_folder_index(opts.output) if opts.append else 0

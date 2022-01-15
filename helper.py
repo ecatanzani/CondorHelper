@@ -302,6 +302,8 @@ class helper():
                             self.efficiency_task(outScript, dataListPath, cDir, pars)
                         elif task['signal_selection']:
                             self.signal_selection_task(outScript, dataListPath, cDir, pars)
+                        elif task['xtrl']:
+                            self.xtrl_task(outScript, dataListPath, cDir, pars)
                 except OSError:
                     print(f"ERROR creating HTCondor bash script file in: {cDir}")
                     raise
@@ -465,6 +467,18 @@ class helper():
         
 
     def signal_selection_task(self, outScript: str, dataListPath: str, cDir: str, pars: dict):
+        
+        tmpOutDir = f"{cDir}/outFiles"
+        outScript.write("#!/usr/bin/env bash\n")
+        outScript.write("source /opt/rh/devtoolset-7/enable\n")
+        outScript.write("source /storage/gpfs_data/dampe/users/ecatanzani/deps/root-6.22/bin/thisroot.sh\n")
+        outScript.write(f"mkdir {tmpOutDir}\n")
+
+        _command = f"{pars['executable']} -i {dataListPath} -w {pars['config']} -d {tmpOutDir} -v"
+
+        outScript.write(_command)
+
+    def xtrl_task(self, outScript: str, dataListPath: str, cDir: str, pars: dict):
         
         tmpOutDir = f"{cDir}/outFiles"
         outScript.write("#!/usr/bin/env bash\n")
