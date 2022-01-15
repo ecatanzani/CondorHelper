@@ -466,7 +466,7 @@ class helper():
         outScript.write(_command)
         
 
-    def signal_selection_task(self, outScript: str, dataListPath: str, cDir: str, pars: dict):
+    def xtrl_task(self, outScript: str, dataListPath: str, cDir: str, pars: dict):
         
         tmpOutDir = f"{cDir}/outFiles"
         outScript.write("#!/usr/bin/env bash\n")
@@ -478,7 +478,7 @@ class helper():
 
         outScript.write(_command)
 
-    def xtrl_task(self, outScript: str, dataListPath: str, cDir: str, pars: dict):
+    def signal_selection_task(self, outScript: str, dataListPath: str, cDir: str, pars: dict):
         
         tmpOutDir = f"{cDir}/outFiles"
         outScript.write("#!/usr/bin/env bash\n")
@@ -493,6 +493,18 @@ class helper():
             _opt_command += f"-m {pars['lm']} "
 
         _command = f"{pars['executable']} -i {dataListPath} -d {tmpOutDir} -v {_opt_command}"
+
+        outScript.write(_command)
+
+    def xtrl_task(self, outScript: str, dataListPath: str, cDir: str, pars: dict):
+        
+        tmpOutDir = f"{cDir}/outFiles"
+        outScript.write("#!/usr/bin/env bash\n")
+        outScript.write("source /opt/rh/devtoolset-7/enable\n")
+        outScript.write("source /storage/gpfs_data/dampe/users/ecatanzani/deps/root-6.22/bin/thisroot.sh\n")
+        outScript.write(f"mkdir {tmpOutDir}\n")
+
+        _command = f"{pars['executable']} -i {dataListPath} -w {pars['config']} -d {tmpOutDir} -v"
 
         outScript.write(_command)
 
