@@ -67,7 +67,8 @@ def main(args=None):
         "acceptance": False, 
         "efficiency": False,
         "signal_selection": False,
-        "xtrl": False
+        "xtrl": False,
+        "selection_split": False
     }
 
     aladin_helper.parse_input_list(pars, start_idx=0, recursive=recursive)
