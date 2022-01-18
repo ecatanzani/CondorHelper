@@ -19,7 +19,7 @@ def main(args=None):
                         action='store_true', help='recreate output dirs if present')
 
     opts = parser.parse_args(args)
-    acceptance_helper = helper.helper()
+    split_selection_helper = helper.helper()
 
     pars = {
         "list": opts.list,
@@ -43,9 +43,9 @@ def main(args=None):
         "selection_split": True
     }
 
-    acceptance_helper.parse_input_list(pars, start_idx=0)
-    acceptance_helper.create_condor_files(pars, task)
-    acceptance_helper.submit_jobs()
+    split_selection_helper.parse_input_list(pars, start_idx=0)
+    split_selection_helper.create_condor_files(pars, task)
+    split_selection_helper.submit_jobs()
 
 if __name__ == '__main__':
     main()
