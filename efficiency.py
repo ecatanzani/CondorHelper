@@ -43,7 +43,8 @@ def main(args=None):
         "efficiency": True,
         "signal_selection": False,
         "xtrl": False,
-        "selection_split": False
+        "selection_split": False,
+        "bdt_electron_selection": False
     }
 
     efficiency_helper.parse_input_list(pars, start_idx=0)

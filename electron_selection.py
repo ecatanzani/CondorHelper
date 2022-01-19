@@ -46,7 +46,8 @@ def main(args=None):
         "efficiency": False,
         "signal_selection": True,
         "xtrl": False,
-        "selection_split": False
+        "selection_split": False,
+        "bdt_electron_selection": False
     }
 
     signal_selection_helper.parse_input_list(pars, start_idx=0)

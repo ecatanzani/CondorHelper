@@ -40,7 +40,8 @@ def main(args=None):
         "efficiency": False,
         "signal_selection": False,
         "xtrl": True,
-        "selection_split": False
+        "selection_split": False,
+        "bdt_electron_selection": False
     }
 
     acceptance_helper.parse_input_list(pars, start_idx=0)
