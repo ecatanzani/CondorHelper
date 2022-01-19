@@ -39,7 +39,7 @@ def main(args=None):
         "acceptance": False, 
         "efficiency": False,
         "signal_selection": False,
-        "xtrl": True,
+        "xtrl": False,
         "selection_split": False,
         "bdt_electron_selection": True
     }
