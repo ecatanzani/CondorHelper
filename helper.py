@@ -520,7 +520,11 @@ class helper():
         outScript.write("source /storage/gpfs_data/dampe/users/ecatanzani/deps/root-6.22/bin/thisroot.sh\n")
         outScript.write(f"mkdir {tmpOutDir}\n")
 
-        _command = f"{pars['executable']} -i {dataListPath} -c {pars['config']} -d {tmpOutDir} -v"
+        _opt_command = ""
+        if pars['eff_corr']:
+            _opt_command += f"-f {pars['eff_corr']} "
+            
+        _command = f"{pars['executable']} -i {dataListPath} -c {pars['config']} -d {tmpOutDir} -v {_opt_command}"
 
         outScript.write(_command)
 

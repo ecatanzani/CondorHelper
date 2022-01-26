@@ -7,6 +7,8 @@ def main(args=None):
                         dest='list', help='Input MC list')
     parser.add_argument("-c", "--config", type=str,
                         dest='config', help='Energy config file')
+    parser.add_argument("-e", "--eff_corr", type=str,
+                        dest='eff_corr', help='Signal Efficiency Correction Function')
     parser.add_argument("-o", "--output", type=str,
                         dest='output', help='HTC output directory')
     parser.add_argument("-f", "--file", type=int, dest='file',
@@ -25,6 +27,7 @@ def main(args=None):
         "list": opts.list,
         "output": opts.output,
         "config": opts.config,
+        "eff_corr": opts.eff_corr,
         "files": opts.file,
         "executable": opts.executable,
         "verbose": opts.verbose,
