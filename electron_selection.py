@@ -32,7 +32,7 @@ def main(args=None):
         "list": opts.list,
         "output": opts.output,
         "config": opts.config,
-        "bdt-config": opts.bdt_config,
+        "bdt_config": opts.bdt_config,
         "lm": opts.lm,
         "files": opts.file,
         "executable": opts.executable,

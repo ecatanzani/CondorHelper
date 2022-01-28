@@ -514,7 +514,7 @@ class helper():
         if pars['multi']:
             _command = f"{pars['executable']} -i {dataListPath} -c {pars['config']} -b {os.path.join(cDir, 'classifier.conf')} -m {pars['lm']} -d {tmpOutDir} -v"
         else:
-            _command = f"{pars['executable']} -i {dataListPath} -c {pars['config']} -b {pars['bdt-config']} -m {pars['lm']} -d {tmpOutDir} -v"
+            _command = f"{pars['executable']} -i {dataListPath} -c {pars['config']} -b {pars['bdt_config']} -m {pars['lm']} -d {tmpOutDir} -v"
 
         outScript.write(_command)
 
