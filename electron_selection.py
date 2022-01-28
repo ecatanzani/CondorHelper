@@ -37,7 +37,8 @@ def main(args=None):
         "files": opts.file,
         "executable": opts.executable,
         "verbose": opts.verbose,
-        "recreate": opts.new
+        "recreate": opts.new,
+        "multi": False
     }
 
     task = {
