@@ -10,6 +10,8 @@ def main(args=None):
                         dest='list', help='Input MC list')
     parser.add_argument("-c", "--config", type=str,
                         dest='config', help='Collector Config Directory')
+    parser.add_argument("-b", "--bdt-config", type=str,
+                        dest='bdt_config', help='BDT Reader Config File')
     parser.add_argument("-o", "--output", type=str,
                         dest='output', help='HTC output directory')
     parser.add_argument("-m", "--learning_method", type=str,
@@ -30,6 +32,7 @@ def main(args=None):
         "list": opts.list,
         "output": opts.output,
         "config": opts.config,
+        "bdt-config": opts.bdt_config,
         "lm": opts.lm,
         "files": opts.file,
         "executable": opts.executable,

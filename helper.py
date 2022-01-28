@@ -251,6 +251,23 @@ class helper():
         else:
             return False
 
+    def create_bdt_config_file(self, bdt_cut: float, path: str):
+    
+        # BDT weights paths are fixed
+        low_energy_weights = "/storage/gpfs_data/dampe/users/ecatanzani/myRepos/DAMPE/eFlux/Classifier/Reader/trainedBDT/10GeV_100GeV/TMVAClassification_BDT.weights.xml"        
+        medium_energy_weights = "/storage/gpfs_data/dampe/users/ecatanzani/myRepos/DAMPE/eFlux/Classifier/Reader/trainedBDT/100GeV_1TeV/TMVAClassification_BDT.weights.xml"
+        high_energy_weights = "/storage/gpfs_data/dampe/users/ecatanzani/myRepos/DAMPE/eFlux/Classifier/Reader/trainedBDT/1TeV_10TeV/TMVAClassification_BDT.weights.xml"
+
+        #Build output config file
+        with open(os.path.join(path, "classifier.conf")) as classifier_config_file:
+            classifier_config_file.write("################### Classifier Config File ###################\n\n")
+            classifier_config_file.write(f"low_energy_weights {low_energy_weights}\n")
+            classifier_config_file.write(f"medium_energy_weights {medium_energy_weights}\n")
+            classifier_config_file.write(f"high_energy_weights {high_energy_weights}\n\n")
+            classifier_config_file.write(f"low_energy_classifier_cut {bdt_cut}\n")
+            classifier_config_file.write(f"medium_energy_classifier_cut {bdt_cut}\n")
+            classifier_config_file.write(f"high_energy_classifier_cut {bdt_cut}")
+
     def create_condor_files(self, pars: dict, task: dict, mt: bool = False):
         if self.checkargs(task):
             for cDir in self.condorDirs:
@@ -283,6 +300,10 @@ class helper():
                 else:
                     if pars['verbose']:
                         print(f"HTCondor sub file created in: {cDir}")
+
+                # Write BDT classifier config file
+                if task['signal_selection'] and pars['multi']:
+                    self.create_bdt_config_file(pars['bdt_cut'], cDir)
 
                 # Build executable bash script
                 dataListPath = f"{cDir}/dataList.txt"
@@ -489,14 +510,11 @@ class helper():
         outScript.write("source /opt/rh/devtoolset-7/enable\n")
         outScript.write("source /storage/gpfs_data/dampe/users/ecatanzani/deps/root-6.22/bin/thisroot.sh\n")
         outScript.write(f"mkdir {tmpOutDir}\n")
-        
-        _opt_command = ""
-        if pars['config']:
-            _opt_command += f"-c {pars['config']} "
-        if pars['lm']:
-            _opt_command += f"-m {pars['lm']} "
 
-        _command = f"{pars['executable']} -i {dataListPath} -d {tmpOutDir} -v {_opt_command}"
+        if pars['multi']:
+            _command = f"{pars['executable']} -i {dataListPath} -c {pars['config']} -b {os.path.join(cDir, 'classifier.conf')} -m {pars['lm']} -d {tmpOutDir} -v"
+        else:
+            _command = f"{pars['executable']} -i {dataListPath} -c {pars['config']} -b {pars['bdt_config']} -m {pars['lm']} -d {tmpOutDir} -v"
 
         outScript.write(_command)
 
