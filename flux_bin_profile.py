@@ -67,6 +67,7 @@ def main(args=None):
         flux_bin_profile_helper.parse_input_list(pars, start_idx=0)
         flux_bin_profile_helper.create_condor_files(pars, task)
         flux_bin_profile_helper.submit_jobs()
+        flux_bin_profile_helper.reset()
 
 if __name__ == '__main__':
     main()

@@ -18,6 +18,19 @@ class helper():
         self.skipped_file_noKeys = 0
         self.ntuples_file_size = 6
 
+    def reset(self):
+        self.condorDirs = []
+        self.skipped_dirs = []
+        self.data_dirs = []
+        self.data_files = []
+        self.skipped_file_notFinalDir = 0
+        self.skipped_file_notAllOutput = 0
+        self.skipped_file_noSingleROOTfile = 0
+        self.skipped_file_notROOTfile = 0
+        self.skipped_file_notReadable = 0
+        self.skipped_file_noKeys = 0
+        self.ntuples_file_size = 6
+        
     def get_data_list(self, dataListPath):
         with open(dataListPath, "r") as _list:
             lines = _list.read().splitlines()
