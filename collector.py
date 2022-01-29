@@ -52,7 +52,8 @@ def main(args=None):
         "signal_selection": False,
         "xtrl": False,
         "selection_split": False,
-        "bdt_electron_selection": False
+        "bdt_electron_selection": False,
+        "flux_bin_profile": False
     }
 
     start_idx = get_folder_index(opts.output) if opts.append else 0

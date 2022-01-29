@@ -63,7 +63,8 @@ def main(args=None):
             "signal_selection": True,
             "xtrl": False,
             "selection_split": False,
-            "bdt_electron_selection": False
+            "bdt_electron_selection": False,
+            "flux_bin_profile": False
         }
 
         signal_selection_helper.parse_input_list(pars, start_idx=0)
