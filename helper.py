@@ -172,6 +172,56 @@ class helper():
                     # 'outFiles' dir does not exists
                     self.skipped_dirs.append(full_dir_path)
                     self.skipped_file_notFinalDir += 1
+
+    def getListOfFiles_FluxProfile(self, condor_wd: str):
+        from ROOT import TFile
+
+        # Starting loop on output condor dirs
+        for bin_dir in tqdm(os.listdir(condor_wd), desc='Scanning local HTCondor dir'):
+            for tmp_dir in tqdm(os.listdir(os.path.join(condor_wd, bin_dir)), desc='Scanning local HTCondor dir') if tmp_dir.startswith('energy_bin_'):
+                if tmp_dir.startswith('job_'):
+                    full_dir_path = f"{condor_wd}/{tmp_dir}"
+                    expected_condor_outDir = f"{full_dir_path}/outFiles"
+                    # Check if 'outFiles' dir exists
+                    if os.path.isdir(expected_condor_outDir):
+                        _list_dir = [f"{expected_condor_outDir}/{file}" for file in os.listdir(expected_condor_outDir) if file.endswith('.root')]
+                        skipped_dir = False
+                        for file_idx, tmp_acc_full_path in enumerate(_list_dir):
+                            # Check if output ROOT file exists
+                            if os.path.isfile(tmp_acc_full_path):
+                                # Check if output ROOT file is redable
+                                if self.TestROOTFile(tmp_acc_full_path):
+                                    tmp_acc_file = TFile.Open(tmp_acc_full_path, "READ")
+                                    # Check if output ROOT file is redable
+                                    if tmp_acc_file.IsOpen():
+                                        # Check if output ROOT file has keys
+                                        outKeys = tmp_acc_file.GetNkeys()
+                                        if outKeys:
+                                            if file_idx == len(_list_dir)-1 and not skipped_dir:
+                                                self.data_dirs.append(full_dir_path)
+                                            self.data_files.append(tmp_acc_full_path)
+                                        else:
+                                            # output ROOT file has been open but has not keys
+                                            if not skipped_dir:
+                                                self.skipped_dirs.append(full_dir_path)
+                                                skipped_dir = True
+                                            self.skipped_file_noKeys += 1
+                                else:
+                                    # output ROOT file has not been opened correctly
+                                    if not skipped_dir:
+                                        self.skipped_dirs.append(full_dir_path)
+                                        skipped_dir = True
+                                    self.skipped_file_notReadable += 1
+                            else:
+                                # output ROOT file does not exist
+                                if not skipped_dir:
+                                    self.skipped_dirs.append(full_dir_path)
+                                    skipped_dir = True
+                                self.skipped_file_notROOTfile += 1
+                    else:
+                        # 'outFiles' dir does not exists
+                        self.skipped_dirs.append(full_dir_path)
+                        self.skipped_file_notFinalDir += 1
     
     def getPartialListOfFiles(self, condor_wd: str):
         from ROOT import TFile
@@ -620,6 +670,35 @@ class helper():
                         for elm in self.data_files:
                             _final_list.write(f"{elm}\n")
 
+    def status_flux_profile(self, pars: dict):
+        
+        self.getListOfFiles_FluxProfile(pars['input'])
+        if pars['verbose']:
+            print(f"Found {len(self.data_dirs)} GOOD condor directories")
+        if self.skipped_dirs:
+            print(f"Found {len(self.skipped_dirs)} BAD condor directories...\n")
+            print(f"Found {self.skipped_file_notFinalDir} directories with no output folder")
+            print(f"Found {self.skipped_file_notAllOutput} directories with inconsistent number of output ROOT files")
+            print(f"Found {self.skipped_file_notROOTfile} directories with no output ROOT file")
+            print(f"Found {self.skipped_file_notReadable} directories with corrupted output ROOT file")
+            print(f"Found {self.skipped_file_noKeys} directories where output ROOT file has no keys\n")
+            print('Here the folders list...\n')
+
+            for idx, elm in enumerate(self.skipped_dirs):
+                print(f'Skipped directory [{idx+1}] : {elm}')    
+
+            if pars['resubmit']:
+                print(f"\nResubmitting HTCondor jobs for {len(self.skipped_dirs)} directories\n")
+                for dir in self.skipped_dirs:
+                    self.clean_condor_dir(dir)
+                self.resubmit_condor_jobs(pars['verbose'], pars['modify_sub_file'])
+        else:
+            if pars['list']:
+                _list_path = pars['input'][pars['input'].rfind('/')+1:] + ".txt"
+                with open(_list_path, "w") as _final_list:
+                    for elm in self.data_files:
+                        _final_list.write(f"{elm}\n")
+
     def aggregate(self, pars: dict):
         if pars['verbose']:
             print(f"Going to add {len(self.data_files)} ROOT files...")
@@ -646,6 +725,14 @@ class helper():
 
     def integral(self, pars: dict):
         self.getListOfFiles(pars['input'])
+        if pars['filter']:
+            self.cleanListOfFiles(pars)
+        if pars['bin_order']:
+            self.orderListOfFiles()
+        self.aggregate(pars)
+    
+    def integral_flux_profile(self, pars: dict):
+        self.getListOfFiles_FluxProfile(pars['input'])
         if pars['filter']:
             self.cleanListOfFiles(pars)
         if pars['bin_order']:
