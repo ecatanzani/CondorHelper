@@ -1,3 +1,4 @@
+import os
 import helper
 import argparse
 
@@ -29,6 +30,11 @@ def main(args=None):
 
     for bin in range(1, bins+1):
         
+        # Build the output directory
+        tmp_output_dir = os.path.join(opts.output, f"energy_bin_{bin}")
+        if not os.path.exists(tmp_output_dir):
+            os.mkdir(tmp_output_dir)
+
         pars = {
             "list": opts.list,
             "energy_config_file": opts.config,
@@ -37,7 +43,7 @@ def main(args=None):
             "exposure": opts.exposure,
             "energy_bin": bin,
             "learning_method": "BDT",
-            "output": opts.output,
+            "output": tmp_output_dir,
             "files": 1e+6,
             "executable": opts.executable,
             "verbose": opts.verbose,
