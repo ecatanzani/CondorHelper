@@ -4,8 +4,10 @@ import argparse
 
 def main(args=None):
     parser = argparse.ArgumentParser(description='DAMPE Acceptance facility')
-    parser.add_argument("-l", "--list", type=str,
-                        dest='list', help='Input MC list')
+    parser.add_argument("-d", "--data-list", type=str,
+                        dest='data_list', help='Input DATA list')
+    parser.add_argument("-m", "--mc-list", type=str,
+                        dest='mc_list', help='Input MC list')
     parser.add_argument("-c", "--config", type=str,
                         dest='config', help='Energy Config File')
     parser.add_argument("-b", "--bdt-config", type=str,
@@ -14,6 +16,8 @@ def main(args=None):
                         dest='acceptance', help='Acceptance ROOT File')
     parser.add_argument("-e", "--exposure", type=str,
                         dest='exposure', help='Exposure')
+    parser.add_argument("-f", "--eff-corr-func", type=str,
+                        dest='eff_corr_func', help='Efficiency Correction Functions')
     parser.add_argument("-o", "--output", type=str,
                         dest='output', help='HTC output directory')
     parser.add_argument("-x", "--executable", type=str,
@@ -36,13 +40,15 @@ def main(args=None):
             os.mkdir(tmp_output_dir)
 
         pars = {
-            "list": opts.list,
+            "list": opts.data_list,
+            "mc_list": opts.mc_list,
             "energy_config_file": opts.config,
             "bdt_config_file": opts.bdt_config,
             "acceptance_file": opts.acceptance,
             "exposure": opts.exposure,
             "energy_bin": bin,
             "learning_method": "BDT",
+            "eff_corr_functions": opts.eff_corr_func,
             "output": tmp_output_dir,
             "files": 1e+6,
             "executable": opts.executable,
