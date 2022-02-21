@@ -16,6 +16,9 @@ def main(args=None):
                             const=10, nargs='?', help='Number of files to add')
     parser.add_argument("-v", "--verbose", dest='verbose', default=False,
                         action='store_true', help='run in high verbosity mode')
+    
+    parser.add_argument("-l", "--list", dest='list', default=False,
+                        action='store_true', help='Create a list of completed files')
 
     opts = parser.parse_args(args)
     integral_helper = helper.helper()
@@ -26,7 +29,8 @@ def main(args=None):
         "filter": opts.filter,
         "bin_order": opts.bin_order,
         "number": opts.number,
-        "verbose": opts.verbose
+        "verbose": opts.verbose,
+        "list": opts.list
     }
 
     integral_helper.integral_partial(pars)

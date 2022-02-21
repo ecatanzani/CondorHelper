@@ -744,4 +744,10 @@ class helper():
             self.cleanListOfFiles(pars)
         if pars['bin_order']:
             self.orderListOfFiles()
-        self.aggregate(pars)
+        if pars['list']:
+            _list_path = pars['input'][pars['input'].rfind('/')+1:] + ".txt"
+            with open(_list_path, "w") as _final_list:
+                for elm in self.data_files:
+                    _final_list.write(f"{elm}\n")
+        else:
+            self.aggregate(pars)
