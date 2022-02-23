@@ -11,7 +11,7 @@ def main(args=None):
     parser.add_argument("-e", "--config-energy", type=str,
                         dest='config_energy', help='Energy Config File')
     parser.add_argument("-m", "--learning-method", type=str,
-                        dest='learning-method', help='TMVA Learning Method')
+                        dest='learning_method', help='TMVA Learning Method')
     parser.add_argument("-c", "--cosine-regularize", type=str,
                         dest='cosine_regularize', help='Cosine Regularize Correction ROOT File')
     parser.add_argument("-t", "--box-cox-regularize", type=str,
