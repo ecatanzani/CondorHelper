@@ -4,7 +4,7 @@ import argparse
 def main(args=None):
     parser = argparse.ArgumentParser(description='DAMPE Efficiency facility')
     parser.add_argument("-l", "--list", type=str,
-                        dest='list', help='Input MC list')
+                        dest='list', help='Input DATA/MC list')
     
     parser.add_argument("-b", "--config-bdt", type=str,
                         dest='config_bdt', help='BDT Config File')
