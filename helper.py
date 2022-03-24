@@ -544,7 +544,7 @@ class helper():
         outScript.write("source /storage/gpfs_data/dampe/users/ecatanzani/deps/root-6.22/bin/thisroot.sh\n")
         outScript.write(f"mkdir {tmpOutDir}\n")
         
-        _command = f"{pars['executable']} -i {dataListPath} -d {tmpOutDir} -v -b {pars['config-bdt']} -e {pars['config-energy']} -l {pars['learning-method']} -c {pars['cosine-regularize']} -t {pars['box-cox-regularize']}"
+        _command = f"{pars['executable']} -i {dataListPath} -d {tmpOutDir} -v -b {pars['config-bdt']} -f {pars['signal-correction']} -e {pars['config-energy']} -l {pars['learning-method']} -c {pars['cosine-regularize']} -t {pars['box-cox-regularize']}"
 
         outScript.write(_command)
         

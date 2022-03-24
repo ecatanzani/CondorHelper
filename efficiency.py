@@ -8,6 +8,8 @@ def main(args=None):
     
     parser.add_argument("-b", "--config-bdt", type=str,
                         dest='config_bdt', help='BDT Config File')
+    parser.add_argument("-s", "--signal-correction", type=str,
+                        dest='signal_correction', help='Signal Correction ROOT File')
     parser.add_argument("-e", "--config-energy", type=str,
                         dest='config_energy', help='Energy Config File')
     parser.add_argument("-m", "--learning-method", type=str,
@@ -36,6 +38,7 @@ def main(args=None):
         "list": opts.list,
         "output": opts.output,
         "config-bdt": opts.config_bdt,
+        "signal-correction": opts.signal_correction,
         "config-energy": opts.config_energy,
         "learning-method": opts.learning_method,
         "cosine-regularize": opts.cosine_regularize,
