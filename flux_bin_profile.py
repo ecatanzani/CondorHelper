@@ -3,11 +3,14 @@ import helper
 import argparse
 
 def main(args=None):
-    parser = argparse.ArgumentParser(description='DAMPE Acceptance facility')
+    parser = argparse.ArgumentParser(description='DAMPE flux stability study')
     parser.add_argument("-d", "--data-list", type=str,
                         dest='data_list', help='Input DATA list')
     parser.add_argument("-m", "--mc-list", type=str,
                         dest='mc_list', help='Input MC list')
+    parser.add_argument("-p", "--proton_fit_file", type=str,
+                        dest='proton_fit_file', help='Proton fit file')
+
     parser.add_argument("-c", "--config", type=str,
                         dest='config', help='Energy Config File')
     parser.add_argument("-b", "--bdt-config", type=str,
@@ -42,6 +45,7 @@ def main(args=None):
         pars = {
             "list": opts.data_list,
             "mc_list": opts.mc_list,
+            "proton_fit_file": opts.proton_fit_file,
             "energy_config_file": opts.config,
             "bdt_config_file": opts.bdt_config,
             "acceptance_file": opts.acceptance,

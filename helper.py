@@ -612,7 +612,7 @@ class helper():
         outScript.write("source /storage/gpfs_data/dampe/users/ecatanzani/deps/root-6.22/bin/thisroot.sh\n")
         outScript.write(f"mkdir {tmpOutDir}\n")
 
-        _command = f"{pars['executable']} -i {dataListPath} -s {pars['mc_list']} -c {pars['energy_config_file']} -b {pars['bdt_config_file']} -a {pars['acceptance_file']} -e {pars['exposure']} -r {pars['energy_bin']} -f {pars['eff_corr_functions']} -m {pars['learning_method']} -d {tmpOutDir} -v"
+        _command = f"{pars['executable']} -i {dataListPath} -e {pars['mc_list']} -p {pars['proton_fit_file']} -c {pars['energy_config_file']} -b {pars['bdt_config_file']} -a {pars['acceptance_file']} -t {pars['exposure']} -r {pars['energy_bin']} -f {pars['eff_corr_functions']} -m {pars['learning_method']} -d {tmpOutDir} -v"
 
         outScript.write(_command)
 
