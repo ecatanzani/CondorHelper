@@ -41,7 +41,8 @@ def main(args=None):
         "signal_selection": False,
         "xtrl": False,
         "selection_split": False,
-        "bdt_electron_selection": False
+        "bdt_electron_selection": False,
+        "preselection": False
     }
 
     acceptance_helper.parse_input_list(pars, start_idx=0)

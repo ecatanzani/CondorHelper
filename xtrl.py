@@ -42,7 +42,8 @@ def main(args=None):
         "xtrl": True,
         "selection_split": False,
         "bdt_electron_selection": False,
-        "flux_bin_profile": False
+        "flux_bin_profile": False,
+        "preselection": False
     }
 
     acceptance_helper.parse_input_list(pars, start_idx=0)

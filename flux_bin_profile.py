@@ -71,7 +71,8 @@ def main(args=None):
             "xtrl": False,
             "selection_split": False,
             "bdt_electron_selection": False,
-            "flux_bin_profile": True
+            "flux_bin_profile": True,
+            "preselection": False
         }
 
         flux_bin_profile_helper.parse_input_list(pars, start_idx=0)

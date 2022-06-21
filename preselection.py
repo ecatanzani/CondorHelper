@@ -7,21 +7,22 @@ def get_folder_index(output: str) -> int:
     return max([int(file[file.rfind('_')+1:]) for file in jobs_folder])+1
 
 def main(args=None):
-    parser = ArgumentParser(description='DAMPE all-electron kompressor facility')
+    parser = ArgumentParser(description='DAMPE all-electron preselection facility')
     parser.add_argument("-l", "--list", type=str,
                         dest='list', help='Input DATA/MC list')
     parser.add_argument("-c", "--config", type=str,
-                        dest='config', help='Collector Config Directory')
+                        dest='config', help='Energy config file')
+    parser.add_argument("-s", "--spectral", type=str,
+                        dest='spectral', help='MC spectral index')
     parser.add_argument("-o", "--output", type=str,
                         dest='output', help='HTC output directory')
     parser.add_argument("-m", "--mc", dest='mc',
                         default=False, action='store_true', help='MC event collector')
-    parser.add_argument("-b", "--behaviour", type=str,
-                            dest='behaviour', help='Variables regularizer facility')
     parser.add_argument("-f", "--file", type=int, dest='file',
                         const=100, nargs='?', help='files to process in job')
     parser.add_argument("-x", "--executable", type=str,
                         dest='executable', help='Analysis script')
+
     parser.add_argument("-v", "--verbose", dest='verbose', default=False,
                         action='store_true', help='run in high verbosity mode')
     parser.add_argument("-r", "--recreate", dest='recreate', default=False,
@@ -37,7 +38,7 @@ def main(args=None):
         "config": opts.config,
         "output": opts.output,
         "mc": opts.mc,
-        "regularize": opts.behaviour,
+        "spectral": opts.spectral,
         "files": opts.file,
         "executable": opts.executable,
         "verbose": opts.verbose,
@@ -46,7 +47,7 @@ def main(args=None):
 
     task = {
         "collector": False, 
-        "kompressor": True, 
+        "kompressor": False, 
         "aladin": False, 
         "split": False, 
         "acceptance": False, 
@@ -56,7 +57,7 @@ def main(args=None):
         "selection_split": False,
         "bdt_electron_selection": False,
         "flux_bin_profile": False,
-        "preselection": False
+        "preselection": True
     }
 
     start_idx = get_folder_index(opts.output) if opts.append else 0

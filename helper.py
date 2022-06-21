@@ -373,6 +373,8 @@ class helper():
                     with open(bashScriptPath, "w") as outScript:
                         if task['collector']:
                             self.collector_task(outScript, dataListPath, cDir, pars)
+                        if task['preselection']:
+                            self.preselection_task(outScript, dataListPath, cDir, pars)
                         elif task['kompressor']:
                             self.kompressor_task(outScript, dataListPath, cDir, pars)
                         elif task['aladin']:
@@ -417,6 +419,17 @@ class helper():
         outScript.write(f"mkdir {tmpOutDir}\n")
         _cmd = f"{pars['executable']} -w {pars['config']} -i {dataListPath} -d {tmpOutDir} -v "
         _cmd += "-m" if pars['mc'] else "-r"
+        outScript.write(_cmd)
+
+    def preselection_task(self, outScript: str, dataListPath: str, cDir: str, pars: dict):
+        tmpOutDir = f"{cDir}/outFiles"
+        outScript.write("#!/usr/bin/env bash\n")
+        outScript.write("source /opt/rh/devtoolset-7/enable\n")
+        outScript.write("source /storage/gpfs_data/dampe/users/ecatanzani/deps/root-6.22/bin/thisroot.sh\n")
+        outScript.write(f"mkdir {tmpOutDir}\n")
+        _cmd = f"{pars['executable']} -i {dataListPath} -e {pars['config']} -s {pars['spectral']} -d {tmpOutDir} -v "
+        if pars['mc']:
+            _cmd += "-m"
         outScript.write(_cmd)
 
     def kompressor_task(self, outScript: str, dataListPath: str, cDir: str, pars: dict):
