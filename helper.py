@@ -697,7 +697,7 @@ class helper():
                 print(f"\nResubmitting HTCondor jobs for {len(self.skipped_dirs)} directories\n")
                 for dir in self.skipped_dirs:
                     self.clean_condor_dir(dir)
-                self.resubmit_condor_jobs(pars['verbose'], pars['modify_sub_file'])
+                self.resubmit_condor_jobs(pars['verbose'])
 
     def status_flux_profile(self, pars: dict):
         
