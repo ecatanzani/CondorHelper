@@ -124,12 +124,12 @@ class helper():
             _tmp_file.Close()
             return True
 
-    def getListOfFiles(self, condor_wd: str):
+    def getListOfFiles(self, condor_wd: str, folder_starts_with: str = "job_"):
         from ROOT import TFile
 
         # Starting loop on output condor dirs
         for tmp_dir in tqdm(os.listdir(condor_wd), desc='Scanning local HTCondor dir'):
-            if tmp_dir.startswith('job_'):
+            if tmp_dir.startswith(folder_starts_with):
                 full_dir_path = f"{condor_wd}/{tmp_dir}"
                 expected_condor_outDir = f"{full_dir_path}/outFiles"
                 # Check if 'outFiles' dir exists
@@ -675,6 +675,29 @@ class helper():
                     with open(_list_path, "w") as _final_list:
                         for elm in self.data_files:
                             _final_list.write(f"{elm}\n")
+
+    def status_preselection_stats(self, pars: dict):
+        
+        self.getListOfFiles(pars['input'], folder_starts_with="20")
+        if pars['verbose']:
+            print(f"Found {len(self.data_dirs)} GOOD condor directories")
+        if self.skipped_dirs:
+            print(f"Found {len(self.skipped_dirs)} BAD condor directories...\n")
+            print(f"Found {self.skipped_file_notFinalDir} directories with no output folder")
+            print(f"Found {self.skipped_file_notAllOutput} directories with inconsistent number of output ROOT files")
+            print(f"Found {self.skipped_file_notROOTfile} directories with no output ROOT file")
+            print(f"Found {self.skipped_file_notReadable} directories with corrupted output ROOT file")
+            print(f"Found {self.skipped_file_noKeys} directories where output ROOT file has no keys\n")
+            print('Here the folders list...\n')
+
+            for idx, elm in enumerate(self.skipped_dirs):
+                print(f'Skipped directory [{idx+1}] : {elm}')    
+
+            if pars['resubmit']:
+                print(f"\nResubmitting HTCondor jobs for {len(self.skipped_dirs)} directories\n")
+                for dir in self.skipped_dirs:
+                    self.clean_condor_dir(dir)
+                self.resubmit_condor_jobs(pars['verbose'], pars['modify_sub_file'])
 
     def status_flux_profile(self, pars: dict):
         
